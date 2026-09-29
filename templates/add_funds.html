@@ -1,1 +1,37 @@
-
+{% extends "base.html" %}
+{% block title %}Add Funds{% endblock %}
+{% set active_tab = 'addfunds' %}
+{% block content %}
+<div class="card p-3 p-md-4">
+    <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-wallet me-2"></i> Add Funds to Account</h4>
+    <p class="text-muted">Apne account mein balance add karne ke liye neech diye gaye payment methods par raqam transfer karein:</p>
+    <div class="row mt-4">
+        <div class="col-md-4 mb-3">
+            <div class="card border p-3 bg-light h-100">
+                <h5 class="fw-bold text-success"><i class="fas fa-mobile-alt me-1"></i> Easypaisa</h5>
+                <p class="mb-1">Title: <b>Arman Akhtar</b></p>
+                <p class="mb-0">Number: <b>03281583582</b></p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border p-3 bg-light h-100">
+                <h5 class="fw-bold text-primary"><i class="fas fa-university me-1"></i> NayaPay</h5>
+                <p class="mb-1">Title: <b>Arman Akhtar</b></p>
+                <p class="mb-0">Number: <b>03281583582</b></p>
+            </div>
+        </div>
+        <div class="col-md-4 mb-3">
+            <div class="card border p-3 bg-light h-100">
+                <h5 class="fw-bold text-info"><i class="fas fa-credit-card me-1"></i> SadaPay</h5>
+                <p class="mb-1">Title: <b>Arman Akhtar</b></p>
+                <p class="mb-0">Number: <b>03281583582</b></p>
+            </div>
+        </div>
+    </div>
+    <div class="mt-4 p-3 bg-white border rounded">
+        <h6 class="fw-bold">Payment ke baad kya karein?</h6>
+        <p class="text-muted mb-2">Raqam transfer karne ke baad screenshot ya transaction ID hamare WhatsApp support par bhejein taaki foran balance add ho jaye.</p>
+        <a href="https://wa.me/923281583582" target="_blank" class="btn btn-success fw-bold px-4"><i class="fab fa-whatsapp me-2"></i> Chat on WhatsApp</a>
+    </div>
+</div>
+{% endblock %}
