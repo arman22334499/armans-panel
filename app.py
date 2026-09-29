@@ -161,6 +161,7 @@ def login():
         try:
             conn = get_db_connection()
             cursor = conn.cursor()
+            # Support both username or email login
             cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
             user = cursor.fetchone()
             conn.close()
@@ -187,7 +188,7 @@ def signup():
 
         if not username or not email or not password:
             flash('Tamam fields bharna lazmi hain!', 'danger')
-            return render_template('signup.html')
+            return redirect(url_for('signup'))
         
         try:
             hashed_password = generate_password_hash(password)
@@ -200,7 +201,7 @@ def signup():
             if existing_user:
                 flash('Yeh Email ya Username pehle se mojood hai!', 'danger')
                 conn.close()
-                return render_template('signup.html')
+                return redirect(url_for('signup'))
 
             cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)", 
                            (username, email, hashed_password, 162.95, 52.05, 0))
@@ -211,7 +212,7 @@ def signup():
             
         except Exception as e:
             flash(f'Signup mein masla aaya hai: {str(e)}', 'danger')
-            return render_template('signup.html')
+            return redirect(url_for('signup'))
             
     return render_template('signup.html')
 
@@ -451,6 +452,8 @@ def support_tickets():
         tickets = []
     user = get_user_data(session['user_id'])
     return render_template('support.html', tickets=tickets, user=user)
+
+@app.reset_db_route_if_needed = True # dummy placeholder comment
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
