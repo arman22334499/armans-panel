@@ -35,6 +35,13 @@ def init_db():
             )
         ''')
         
+        # Auto-migration: Agar purani table me column missing ho toh ye khud add kar dega
+        try:
+            cursor.execute("ALTER TABLE users ADD COLUMN total_spent REAL DEFAULT 0.0")
+            conn.commit()
+        except sqlite3.OperationalError:
+            pass # Agar column pehle se mojood hoga toh ignore kar dega
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
