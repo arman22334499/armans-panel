@@ -108,19 +108,23 @@ MASTER_TEMPLATE = '''
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
         .sidebar { background: #121619; min-height: 100vh; color: white; padding: 20px; box-shadow: 3px 0 10px rgba(0,0,0,0.1); }
         .sidebar h4 { font-weight: 800; color: #0d6efd; letter-spacing: 0.5px; }
         .sidebar a { color: #a0aec0; text-decoration: none; display: block; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: 500; transition: all 0.2s ease-in-out; }
         .sidebar a:hover, .sidebar a.active { background: #0d6efd; color: white; transform: translateX(4px); }
         .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); background: white; }
         .top-navbar { background: white; border-radius: 12px; padding: 15px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        
+        .offcanvas { background: #121619; color: white; }
+        .offcanvas a { color: #a0aec0; text-decoration: none; display: block; padding: 12px 16px; border-radius: 8px; margin-bottom: 8px; font-weight: 500; }
+        .offcanvas a:hover, .offcanvas a.active { background: #0d6efd; color: white; }
     </style>
 </head>
 <body>
     <div class="container-fluid">
         <div class="row">
-            <!-- Sidebar -->
+            <!-- Desktop Sidebar -->
             <div class="col-md-3 col-lg-2 sidebar p-3 d-none d-md-block">
                 <div class="text-center mb-4 mt-2">
                     <h4>👑 Arman Panel</h4>
@@ -135,12 +139,35 @@ MASTER_TEMPLATE = '''
                 <a href="/logout" class="text-danger fw-bold"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
             </div>
 
+            <!-- Mobile Offcanvas Sidebar Menu -->
+            <div class="offcanvas offcanvas-start" tabindex="-1" id="mobileSidebar" aria-labelledby="mobileSidebarLabel">
+                <div class="offcanvas-header border-bottom border-secondary">
+                    <h5 class="offcanvas-title text-primary fw-bold" id="mobileSidebarLabel">👑 Arman Panel</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+                </div>
+                <div class="offcanvas-body">
+                    <a href="/dashboard" class="{% if active_tab == 'dashboard' %}active{% endif %}"><i class="fas fa-cart-plus me-2"></i> New Order</a>
+                    <a href="/services" class="{% if active_tab == 'services' %}active{% endif %}"><i class="fas fa-list-ul me-2"></i> Services List</a>
+                    <a href="/orders" class="{% if active_tab == 'orders' %}active{% endif %}"><i class="fas fa-box-open me-2"></i> Order History</a>
+                    <a href="/add-funds" class="{% if active_tab == 'add_funds' %}active{% endif %}"><i class="fas fa-wallet me-2"></i> Add Funds</a>
+                    <a href="/mass-order" class="{% if active_tab == 'mass_order' %}active{% endif %}"><i class="fas fa-bolt me-2"></i> Mass Order</a>
+                    <a href="/support-tickets" class="{% if active_tab == 'support' %}active{% endif %}"><i class="fas fa-headset me-2"></i> Support Tickets</a>
+                    <hr class="text-secondary my-4">
+                    <a href="/logout" class="text-danger fw-bold"><i class="fas fa-sign-out-alt me-2"></i> Logout</a>
+                </div>
+            </div>
+
             <!-- Main Content Area -->
-            <div class="col-md-9 col-lg-10 p-4">
-                <div class="top-navbar d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="m-0 text-dark fw-bold">Welcome, <span class="text-primary">{{ username }}</span></h5>
+            <div class="col-12 col-md-9 col-lg-10 p-3 p-md-4">
+                <div class="top-navbar d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
                     <div class="d-flex align-items-center gap-3">
-                        <span class="badge bg-success fs-6 px-3 py-2 shadow-sm"><i class="fas fa-wallet me-1"></i> Balance: Rs. {{ "%.2f"|format(balance) }}</span>
+                        <button class="btn btn-outline-primary d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+                            <i class="fas fa-bars"></i>
+                        </button>
+                        <h5 class="m-0 text-dark fw-bold fs-6 fs-md-5">Welcome, <span class="text-primary">{{ username }}</span></h5>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-success fs-6 px-3 py-2 shadow-sm"><i class="fas fa-wallet me-1"></i> Rs. {{ "%.2f"|format(balance) }}</span>
                     </div>
                 </div>
 
@@ -173,12 +200,13 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_input = request.form.get('email', '').strip().lower()
+        login_input = request.form.get('email', '').strip()
         password = request.form.get('password', '')
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(username) = ?", (login_input, login_input))
+        # Support both email or username login securely
+        cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
         user = cursor.fetchone()
         conn.close()
 
@@ -206,13 +234,14 @@ def login():
     <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Login - Arman's Panel</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
     <body class="bg-light">
-        <div class="container d-flex justify-content-center align-items-center vh-100">
-            <div class="card p-4 shadow-lg" style="width: 420px;">
+        <div class="container d-flex justify-content-center align-items-center vh-100 px-3">
+            <div class="card p-4 shadow-lg w-100" style="max-width: 420px;">
                 <div class="text-center mb-4">
                     <h3 class="fw-bold text-primary">👑 Arman's Panel</h3>
                     <p class="text-muted">Sign in to your account</p>
@@ -296,13 +325,14 @@ def signup():
     <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Sign Up - Arman's Panel</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
     <body class="bg-light">
-        <div class="container d-flex justify-content-center align-items-center vh-100">
-            <div class="card p-4 shadow-lg" style="width: 420px;">
+        <div class="container d-flex justify-content-center align-items-center vh-100 px-3">
+            <div class="card p-4 shadow-lg w-100" style="max-width: 420px;">
                 <div class="text-center mb-4">
                     <h3 class="fw-bold text-success">📝 Create Account</h3>
                     <p class="text-muted">Register to start placing orders</p>
@@ -366,13 +396,14 @@ def forgot_password():
     <html lang="en">
     <head>
         <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Forgot Password - Arman's Panel</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
     <body class="bg-light">
-        <div class="container d-flex justify-content-center align-items-center vh-100">
-            <div class="card p-4 shadow-lg text-center" style="width: 420px;">
+        <div class="container d-flex justify-content-center align-items-center vh-100 px-3">
+            <div class="card p-4 shadow-lg text-center w-100" style="max-width: 420px;">
                 <h3 class="fw-bold text-danger mb-3">🔑 Password Reset</h3>
                 <p class="text-muted">Password recover karne ke liye hamare WhatsApp support par rabta karein taaki admin aapka password reset kar sake.</p>
                 <a href="https://wa.me/923281583582" target="_blank" class="btn btn-success fw-bold px-4 py-2 mb-3"><i class="fab fa-whatsapp me-2"></i> Contact on WhatsApp</a>
@@ -420,7 +451,7 @@ def dashboard():
             return redirect(url_for('dashboard'))
 
     content = '''
-    <div class="card p-4">
+    <div class="card p-3 p-md-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-cart-plus me-2"></i> Place New Order</h4>
         <form method="POST">
             <div class="mb-3">
@@ -442,7 +473,7 @@ def dashboard():
             <div class="mb-3 p-3 bg-light rounded border">
                 <h6 class="m-0 text-secondary">Total Charge: <b class="text-success fs-5" id="totalCost">Rs. 0.00</b></h6>
             </div>
-            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold shadow-sm">Place Order</button>
+            <button type="submit" class="btn btn-primary px-4 py-2 fw-bold shadow-sm w-100">Place Order</button>
         </form>
     </div>
     <script>
@@ -466,7 +497,7 @@ def services():
         return redirect(url_for('login'))
     
     content = '''
-    <div class="card p-4">
+    <div class="card p-3 p-md-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-list-ul me-2"></i> Available SMM Services</h4>
         <div class="table-responsive">
             <table class="table table-hover align-middle mt-2">
@@ -506,7 +537,7 @@ def orders():
         orders_list = []
 
     content = '''
-    <div class="card p-4">
+    <div class="card p-3 p-md-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-box-open me-2"></i> Order History</h4>
         <div class="table-responsive">
             <table class="table table-striped align-middle mt-2">
@@ -542,7 +573,7 @@ def add_funds():
         return redirect(url_for('login'))
     
     content = '''
-    <div class="card p-4">
+    <div class="card p-3 p-md-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-wallet me-2"></i> Add Funds to Account</h4>
         <p class="text-muted">Apne account mein balance add karne ke liye neech diye gaye payment methods par raqam transfer karein:</p>
         <div class="row mt-4">
@@ -582,11 +613,11 @@ def mass_order():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     content = '''
-    <div class="card p-4">
+    <div class="card p-3 p-md-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-bolt me-2"></i> Mass Order</h4>
         <p class="text-muted">Har line mein aik order likhein is format mein: <code>service_id | link | quantity</code></p>
         <textarea class="form-control mb-3" rows="6" placeholder="1 | https://instagram.com/p/abc | 1000&#10;7 | https://tiktok.com/@user/video/123 | 5000"></textarea>
-        <button class="btn btn-primary px-4 fw-bold">Submit Mass Orders</button>
+        <button class="btn btn-primary px-4 fw-bold w-100">Submit Mass Orders</button>
     </div>
     '''
     return render_template_string(MASTER_TEMPLATE, active_tab='mass_order', title='Mass Order', username=session.get('username'), balance=get_user_balance(session.get('user_id')), content=content)
@@ -625,7 +656,7 @@ def support_tickets():
         user_tickets = []
 
     content = '''
-    <div class="card p-4 mb-4">
+    <div class="card p-3 p-md-4 mb-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-headset me-2"></i> Create Support Ticket</h4>
         <form method="POST">
             <div class="mb-3">
@@ -636,11 +667,11 @@ def support_tickets():
                 <label class="form-label fw-bold">Message Details</label>
                 <textarea name="message" class="form-control mb-3" rows="4" placeholder="Apni detail yahan likhein..." required></textarea>
             </div>
-            <button type="submit" class="btn btn-success fw-bold px-4">Submit Ticket</button>
+            <button type="submit" class="btn btn-success fw-bold px-4 w-100">Submit Ticket</button>
         </form>
     </div>
 
-    <div class="card p-4">
+    <div class="card p-3 p-md-4">
         <h4 class="mb-3 text-secondary fw-bold"><i class="fas fa-history me-2"></i> Your Tickets History</h4>
         <div class="table-responsive">
             <table class="table table-striped align-middle mt-2">
