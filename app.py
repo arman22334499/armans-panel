@@ -5,6 +5,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
 app.secret_key = 'arman_simple_smm_key_2026'
+app.permanent_session_lifetime = 3600  # Session 1 ghante tak active rahe ga
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -91,9 +92,12 @@ def login():
             conn.close()
 
             if user and check_password_hash(user['password'], password):
+                session.clear()  # Purana session saaf karein
                 session['user_id'] = user['id']
                 session['username'] = user['username']
                 session['is_admin'] = user['is_admin']
+                session.permanent = True
+                
                 if user['is_admin'] == 1:
                     return redirect(url_for('admin_panel'))
                 return redirect(url_for('dashboard'))
