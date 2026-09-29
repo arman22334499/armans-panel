@@ -71,6 +71,15 @@ def init_db():
                 status TEXT DEFAULT 'Pending'
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                subject TEXT,
+                message TEXT,
+                status TEXT DEFAULT 'Open'
+            )
+        ''')
         conn.commit()
         conn.close()
     except Exception as e:
@@ -582,25 +591,82 @@ def mass_order():
     '''
     return render_template_string(MASTER_TEMPLATE, active_tab='mass_order', title='Mass Order', username=session.get('username'), balance=get_user_balance(session.get('user_id')), content=content)
 
-@app.route('/support-tickets')
+@app.route('/support-tickets', methods=['GET', 'POST'])
 def support_tickets():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        subject = request.form.get('subject', '').strip()
+        message = request.form.get('message', '').strip()
+        
+        if subject and message:
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO tickets (user_id, subject, message, status) VALUES (?, ?, ?, ?)",
+                               (session['user_id'], subject, message, 'Open'))
+                conn.commit()
+                conn.close()
+                flash('Support ticket kamyaabi se submit ho gayi!', 'success')
+            except Exception as e:
+                flash(f'Error: {str(e)}', 'danger')
+        else:
+            flash('Tamam fields bharna lazmi hain!', 'danger')
+        return redirect(url_for('support_tickets'))
+
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, subject, message, status FROM tickets WHERE user_id = ? ORDER BY id DESC", (session['user_id'],))
+        user_tickets = cursor.fetchall()
+        conn.close()
+    except:
+        user_tickets = []
+
     content = '''
+    <div class="card p-4 mb-4">
+        <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-headset me-2"></i> Create Support Ticket</h4>
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label fw-bold">Subject / Masla</label>
+                <input type="text" name="subject" class="form-control" placeholder="Misal ke tor par: Order refill request" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">Message Details</label>
+                <textarea name="message" class="form-control mb-3" rows="4" placeholder="Apni detail yahan likhein..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-success fw-bold px-4">Submit Ticket</button>
+        </form>
+    </div>
+
     <div class="card p-4">
-        <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-headset me-2"></i> Support Tickets</h4>
-        <div class="mb-3">
-            <label class="form-label fw-bold">Subject / Masla</label>
-            <input type="text" class="form-control" placeholder="Misal ke tor par: Order refill request">
+        <h4 class="mb-3 text-secondary fw-bold"><i class="fas fa-history me-2"></i> Your Tickets History</h4>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle mt-2">
+                <thead class="table-light">
+                    <tr><th>ID</th><th>Subject</th><th>Message</th><th>Status</th></tr>
+                </thead>
+                <tbody>
+                    {% if tickets %}
+                        {% for t in tickets %}
+                        <tr>
+                            <td>#{{ t.id }}</td>
+                            <td>{{ t.subject }}</td>
+                            <td>{{ t.message }}</td>
+                            <td><span class="badge bg-info text-dark">{{ t.status }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="4" class="text-center text-muted py-4">Abhi tak koi support ticket submit nahi ki gayi.</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
         </div>
-        <div class="mb-3">
-            <label class="form-label fw-bold">Message Details</label>
-            <textarea class="form-control mb-3" rows="4" placeholder="Apni detail yahan likhein..."></textarea>
-        </div>
-        <button class="btn btn-success fw-bold">Submit Ticket</button>
     </div>
     '''
-    return render_template_string(MASTER_TEMPLATE, active_tab='support', title='Support Tickets', username=session.get('username'), balance=get_user_balance(session.get('user_id')), content=content)
+    rendered_content = render_template_string(content, tickets=user_tickets)
+    return render_template_string(MASTER_TEMPLATE, active_tab='support', title='Support Tickets', username=session.get('username'), balance=get_user_balance(session.get('user_id')), content=rendered_content)
 
 @app.route('/logout')
 def logout():
