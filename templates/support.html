@@ -1,44 +1,19 @@
 {% extends "base.html" %}
-{% block title %}Support Tickets{% endblock %}
+{% block title %}Support{% endblock %}
 {% set active_tab = 'support' %}
 {% block content %}
-<div class="card p-4 p-md-5 mb-4">
-    <h4 class="mb-3 text-dark fw-bold"><i class="fas fa-headset text-primary me-2"></i> Create Support Ticket</h4>
+<div class="main-card mb-4">
+    <h4 class="fw-bold mb-3" style="color: #ff7700;">A.I Support Ticket</h4>
     <form method="POST">
         <div class="mb-3">
-            <label class="form-label fw-semibold">Subject</label>
-            <input type="text" name="subject" class="form-control" placeholder="Misal ke tor par: Payment add request" required>
+            <label class="form-label fw-semibold small">Subject</label>
+            <input type="text" name="subject" class="form-control" required>
         </div>
         <div class="mb-3">
-            <label class="form-label fw-semibold">Message</label>
-            <textarea name="message" class="form-control mb-3" rows="4" placeholder="Apni detail yahan likhein..." required></textarea>
+            <label class="form-label fw-semibold small">Message</label>
+            <textarea name="message" class="form-control" rows="3" required></textarea>
         </div>
-        <button type="submit" class="btn btn-success fw-bold px-4 py-2 w-100">Submit Ticket</button>
+        <button type="submit" class="btn btn-orange w-100 py-3">Submit Ticket</button>
     </form>
-</div>
-
-<div class="card p-4 p-md-5">
-    <h4 class="mb-4 text-dark fw-bold"><i class="fas fa-history text-primary me-2"></i> Tickets History</h4>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle mt-2">
-            <thead class="table-light text-uppercase fs-7">
-                <tr><th>ID</th><th>Subject</th><th>Message</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-                {% if tickets %}
-                    {% for t in tickets %}
-                    <tr>
-                        <td><b>#{{ t.id }}</b></td>
-                        <td class="fw-semibold">{{ t.subject }}</td>
-                        <td>{{ t.message }}</td>
-                        <td><span class="badge bg-info bg-opacity-10 text-info px-2 py-1 fw-bold">{{ t.status }}</span></td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-5">Koi ticket mojood nahi hai.</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
-    </div>
 </div>
 {% endblock %}
