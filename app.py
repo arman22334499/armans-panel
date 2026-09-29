@@ -3,19 +3,9 @@ import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
 
 app = Flask(__name__)
 app.secret_key = 'arman_smm_panel_secure_key_2026'
-
-# Rate Limiter setup (Spam aur bots se bachne ke liye)
-limiter = Limiter(
-    get_remote_address,
-    app=app,
-    default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
-)
 
 SMM_API_URL = "https://supplier-smm-panel-url.com/api/v2" 
 SMM_API_KEY = "YOUR_SUPPLIER_API_KEY_HERE"
@@ -132,7 +122,7 @@ def get_supplier_balance():
             return f"{res['balance']} {res.get('currency', 'USD')}"
     except:
         pass
-    return "N/A (API Key Needed)"
+    return "N/A"
 
 def get_all_services():
     try:
@@ -163,31 +153,32 @@ def index():
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
-@limiter.limit("10 per minute")
 def login():
     if request.method == 'POST':
         login_input = request.form.get('email', '').strip()
         password = request.form.get('password', '')
 
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
-        user = cursor.fetchone()
-        conn.close()
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
+            user = cursor.fetchone()
+            conn.close()
 
-        if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['id']
-            session['username'] = user['username']
-            session['is_admin'] = user['is_admin']
-            if user['is_admin'] == 1:
-                return redirect(url_for('admin_panel'))
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Ghalat Email/Username ya Password!', 'danger')
+            if user and check_password_hash(user['password'], password):
+                session['user_id'] = user['id']
+                session['username'] = user['username']
+                session['is_admin'] = user['is_admin']
+                if user['is_admin'] == 1:
+                    return redirect(url_for('admin_panel'))
+                return redirect(url_for('dashboard'))
+            else:
+                flash('Ghalat Email/Username ya Password!', 'danger')
+        except Exception as e:
+            flash(f'Login Error: {str(e)}', 'danger')
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
-@limiter.limit("5 per minute")
 def signup():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
@@ -231,20 +222,23 @@ def forgot_password():
         new_password = request.form.get('new_password', '').strip()
         
         if email and new_password:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-            user = cursor.fetchone()
-            if user:
-                hashed_pw = generate_password_hash(new_password)
-                cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_pw, email))
-                conn.commit()
-                conn.close()
-                flash('Password kamyabi se reset ho gaya! Ab aap naye password se login karein.', 'success')
-                return redirect(url_for('login'))
-            else:
-                conn.close()
-                flash('Yeh email system mein mojood nahi hai!', 'danger')
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+                user = cursor.fetchone()
+                if user:
+                    hashed_pw = generate_password_hash(new_password)
+                    cursor.execute("UPDATE users SET password = ? WHERE email = ?", (hashed_pw, email))
+                    conn.commit()
+                    conn.close()
+                    flash('Password kamyabi se reset ho gaya! Ab aap naye password se login karein.', 'success')
+                    return redirect(url_for('login'))
+                else:
+                    conn.close()
+                    flash('Yeh email system mein mojood nahi hai!', 'danger')
+            except Exception as e:
+                flash(f'Error: {str(e)}', 'danger')
         else:
             flash('Tamam fields bharna lazmi hain!', 'danger')
     return render_template('forgot_password.html')
@@ -319,34 +313,36 @@ def bulk_order():
         if bulk_text:
             lines = bulk_text.split('\n')
             success_count = 0
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            
-            for line in lines:
-                parts = line.strip().split('|')
-                if len(parts) >= 3:
-                    service_id, link, qty = parts[0].strip(), parts[1].strip(), parts[2].strip()
-                    try:
-                        cursor.execute("SELECT * FROM services WHERE id = ?", (service_id,))
-                        srv = cursor.fetchone()
-                        if srv and qty.isdigit():
-                            quantity = int(qty)
-                            price = (quantity * srv['rate']) / 1000.0 if srv['min'] > 1 else srv['rate']
-                            
-                            # Check balance dynamically
-                            cursor.execute("SELECT balance FROM users WHERE id = ?", (session['user_id'],))
-                            curr_bal = cursor.fetchone()['balance']
-                            
-                            if curr_bal >= price:
-                                cursor.execute("UPDATE users SET balance = balance - ?, total_spent = total_spent + ? WHERE id = ?", (price, price, session['user_id']))
-                                cursor.execute("INSERT INTO orders (user_id, service, link, quantity, price, status) VALUES (?, ?, ?, ?, ?, ?)",
-                                               (session['user_id'], f"[{srv['id']}] {srv['name']}", link, quantity, price, 'In Progress'))
-                                success_count += 1
-                    except:
-                        pass
-            conn.commit()
-            conn.close()
-            flash(f'{success_count} orders bulk mein kamyabi se place ho gaye hain!', 'success')
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                
+                for line in lines:
+                    parts = line.strip().split('|')
+                    if len(parts) >= 3:
+                        service_id, link, qty = parts[0].strip(), parts[1].strip(), parts[2].strip()
+                        try:
+                            cursor.execute("SELECT * FROM services WHERE id = ?", (service_id,))
+                            srv = cursor.fetchone()
+                            if srv and qty.isdigit():
+                                quantity = int(qty)
+                                price = (quantity * srv['rate']) / 1000.0 if srv['min'] > 1 else srv['rate']
+                                
+                                cursor.execute("SELECT balance FROM users WHERE id = ?", (session['user_id'],))
+                                curr_bal = cursor.fetchone()['balance']
+                                
+                                if curr_bal >= price:
+                                    cursor.execute("UPDATE users SET balance = balance - ?, total_spent = total_spent + ? WHERE id = ?", (price, price, session['user_id']))
+                                    cursor.execute("INSERT INTO orders (user_id, service, link, quantity, price, status) VALUES (?, ?, ?, ?, ?, ?)",
+                                                   (session['user_id'], f"[{srv['id']}] {srv['name']}", link, quantity, price, 'In Progress'))
+                                    success_count += 1
+                        except:
+                            pass
+                conn.commit()
+                conn.close()
+                flash(f'{success_count} orders bulk mein kamyabi se place ho gaye hain!', 'success')
+            except Exception as e:
+                flash(f'Bulk order error: {str(e)}', 'danger')
             return redirect(url_for('orders'))
             
     return render_template('bulk_order.html', user=user)
@@ -366,7 +362,6 @@ def orders():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Automatic Status Sync with Supplier API if api_order_id exists
         cursor.execute("SELECT id, api_order_id FROM orders WHERE user_id = ? AND status != 'Completed' AND api_order_id IS NOT NULL", (session['user_id'],))
         pending_sync_orders = cursor.fetchall()
         
@@ -434,13 +429,16 @@ def support_tickets():
         subject = request.form.get('subject', '').strip()
         message = request.form.get('message', '').strip()
         if subject and message:
-            conn = get_db_connection()
-            cursor = conn.cursor()
-            cursor.execute("INSERT INTO tickets (user_id, subject, message, status) VALUES (?, ?, ?, ?)",
-                           (session['user_id'], subject, message, 'Open'))
-            conn.commit()
-            conn.close()
-            flash('Ticket submit ho gayi!', 'success')
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO tickets (user_id, subject, message, status) VALUES (?, ?, ?, ?)",
+                               (session['user_id'], subject, message, 'Open'))
+                conn.commit()
+                conn.close()
+                flash('Ticket submit ho gayi!', 'success')
+            except Exception as e:
+                flash(f'Error: {str(e)}', 'danger')
         return redirect(url_for('support_tickets'))
     
     try:
