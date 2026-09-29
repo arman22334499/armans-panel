@@ -10,8 +10,12 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = 'arman_simple_smm_key_2026'
 app.permanent_session_lifetime = 3600
 
+# Absolute path for SQLite database to work perfectly on Railway
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+DB_PATH = os.path.join(BASE_DIR, 'database.db')
+
 def get_db_connection():
-    conn = sqlite3.connect('database.db')
+    conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
@@ -20,8 +24,12 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Purani tables drop kar rahe hain taaki naye columns (jaise total_spent) conflict na karein
+        cursor.execute('DROP TABLE IF EXISTS users')
+        cursor.execute('DROP TABLE IF EXISTS orders')
+        
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -31,8 +39,9 @@ def init_db():
                 is_admin INTEGER DEFAULT 0
             )
         ''')
+        
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS orders (
+            CREATE TABLE orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 service TEXT,
@@ -42,6 +51,7 @@ def init_db():
                 status TEXT DEFAULT 'Pending'
             )
         ''')
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS services (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -62,16 +72,16 @@ def init_db():
             ]
             cursor.executemany("INSERT INTO services (name, category, rate) VALUES (?, ?, ?)", default_services)
 
-        # Admin ko safe tarike se reset ya update karna
-        cursor.execute("DELETE FROM users WHERE username = 'admin' OR email = 'admin@armansmm.com'")
+        # Fresh admin user insert kar rahe hain
         admin_pass = generate_password_hash('admin123')
         cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
                        ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
         
         conn.commit()
         conn.close()
+        print("Database re-initialized successfully at:", DB_PATH)
     except Exception as e:
-        print("DB Error:", e)
+        print("CRITICAL DB Error:", e)
 
 init_db()
 
@@ -108,7 +118,7 @@ def login():
             else:
                 flash('Ghalat Email/Username ya Password!', 'danger')
         except Exception as e:
-            flash(f'Error: {str(e)}', 'danger')
+            flash(f'Login Error: {str(e)}', 'danger')
     return render_template('login.html')
 
 @app.route('/signup', methods=['GET', 'POST'])
@@ -140,7 +150,7 @@ def signup():
             flash('Account ban gaya! Ab aap login kar sakte hain.', 'success')
             return redirect(url_for('login'))
         except Exception as e:
-            flash(f'Error: {str(e)}', 'danger')
+            flash(f'Signup Error: {str(e)}', 'danger')
             return redirect(url_for('signup'))
             
     return render_template('signup.html')
