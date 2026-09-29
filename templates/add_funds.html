@@ -2,42 +2,18 @@
 {% block title %}Add Funds{% endblock %}
 {% set active_tab = 'addfunds' %}
 {% block content %}
-<div class="card p-4 p-md-5">
-    <h4 class="mb-3 text-dark fw-bold"><i class="fas fa-wallet text-primary me-2"></i> Add Funds to Account</h4>
-    <p class="text-muted small">Apne account mein balance add karne ke liye neech diye gaye payment methods par raqam transfer karein:</p>
-    <div class="row mt-4">
-        <div class="col-md-4 mb-3">
-            <div class="card border p-4 bg-light h-100 shadow-none">
-                <h5 class="fw-bold text-success mb-3"><i class="fas fa-mobile-alt me-2"></i> Easypaisa</h5>
-                <p class="mb-1 text-muted small">Account Title:</p>
-                <p class="fw-bold mb-2">Arman Akhtar</p>
-                <p class="mb-1 text-muted small">Account Number:</p>
-                <p class="fw-bold text-success mb-0 fs-5">03281583582</p>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card border p-4 bg-light h-100 shadow-none">
-                <h5 class="fw-bold text-primary mb-3"><i class="fas fa-university me-2"></i> NayaPay</h5>
-                <p class="mb-1 text-muted small">Account Title:</p>
-                <p class="fw-bold mb-2">Arman Akhtar</p>
-                <p class="mb-1 text-muted small">Account Number:</p>
-                <p class="fw-bold text-primary mb-0 fs-5">03281583582</p>
-            </div>
-        </div>
-        <div class="col-md-4 mb-3">
-            <div class="card border p-4 bg-light h-100 shadow-none">
-                <h5 class="fw-bold text-info mb-3"><i class="fas fa-credit-card me-2"></i> SadaPay</h5>
-                <p class="mb-1 text-muted small">Account Title:</p>
-                <p class="fw-bold mb-2">Arman Akhtar</p>
-                <p class="mb-1 text-muted small">Account Number:</p>
-                <p class="fw-bold text-info mb-0 fs-5">03281583582</p>
+<div class="main-card">
+    <h4 class="fw-bold mb-3" style="color: #ff7700;">Add Funds</h4>
+    <p class="text-muted small">Nechay diye gaye numbers par raqam transfer karein:</p>
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="p-3 bg-light rounded-4 border">
+                <h6 class="fw-bold text-success">Easypaisa / NayaPay / SadaPay</h6>
+                <p class="mb-1 small">Title: <b>Arman Akhtar</b></p>
+                <p class="mb-0 small">Number: <b class="fs-6 text-dark">03281583582</b></p>
             </div>
         </div>
     </div>
-    <div class="mt-4 p-4 bg-light border rounded-3">
-        <h6 class="fw-bold mb-2">Payment ke baad kya karein?</h6>
-        <p class="text-muted small mb-3">Raqam transfer karne ke baad screenshot ya transaction ID hamare WhatsApp support par bhejein.</p>
-        <a href="https://wa.me/923281583582" target="_blank" class="btn btn-success fw-bold px-4 py-2"><i class="fab fa-whatsapp me-2"></i> Chat on WhatsApp</a>
-    </div>
+    <a href="https://wa.me/923281583582" target="_blank" class="btn btn-success w-100 py-3 fw-bold rounded-3"><i class="fab fa-whatsapp me-2"></i> Send Screenshot on WhatsApp</a>
 </div>
 {% endblock %}
