@@ -1,4 +1,5 @@
 import os
+import requests
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -6,23 +7,39 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = 'arman_smm_panel_secure_key_2026'
 
+# --- SMM SUPPLIER API CONFIGURATION ---
+# Yahan aap apne supplier (jahan se aap services lete hain) ki API URL aur API Key dalenge
+SMM_API_URL = "https://supplier-smm-panel-url.com/api/v2" 
+SMM_API_KEY = "YOUR_SUPPLIER_API_KEY_HERE"
+
 SERVICES_LIST = [
-    {"id": 4317, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "🌐 Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1, "icon": "fas fa-globe"},
-    {"id": 1, "name": "Instagram Followers [Low Drop] | Premium", "category": "📸 Instagram Followers", "rate": 450, "min": 10, "max": 20000, "icon": "fab fa-instagram"},
-    {"id": 2, "name": "Instagram Followers [Real - Mix Data]", "category": "📸 Instagram Followers", "rate": 350, "min": 50, "max": 50000, "icon": "fab fa-instagram"},
-    {"id": 3, "name": "Instagram Story Views [Instant]", "category": "📸 Instagram Story Views", "rate": 120, "min": 100, "max": 100000, "icon": "fas fa-eye"},
-    {"id": 4, "name": "Instagram Poll Reactions [Real Votes]", "category": "📸 Instagram Poll Reactions", "rate": 200, "min": 50, "max": 10000, "icon": "fas fa-poll"},
-    {"id": 5, "name": "Instagram Likes [Super Fast]", "category": "📸 Instagram Likes", "rate": 150, "min": 50, "max": 50000, "icon": "fas fa-heart"},
-    {"id": 6, "name": "TikTok Views [Super Fast & Cheap]", "category": "🎵 TikTok Views", "rate": 30, "min": 100, "max": 5000000, "icon": "fab fa-tiktok"},
-    {"id": 7, "name": "TikTok Followers [Real Looking]", "category": "🎵 TikTok Followers", "rate": 850, "min": 50, "max": 20000, "icon": "fab fa-tiktok"},
-    {"id": 8, "name": "TikTok Video Likes [High Quality]", "category": "🎵 TikTok Video Likes", "rate": 250, "min": 50, "max": 50000, "icon": "fab fa-tiktok"},
-    {"id": 9, "name": "TikTok Page / Profile Likes", "category": "🎵 TikTok Page Likes", "rate": 300, "min": 50, "max": 30000, "icon": "fab fa-tiktok"},
-    {"id": 10, "name": "YouTube Subscribers [Lifetime Guarantee]", "category": "▶️ YouTube Subscribers", "rate": 3500, "min": 50, "max": 5000, "icon": "fab fa-youtube"},
-    {"id": 11, "name": "YouTube Watchtime Hours [Monetization]", "category": "▶️ YouTube Watchtime", "rate": 7000, "min": 500, "max": 4000, "icon": "fas fa-clock"},
-    {"id": 12, "name": "YouTube Video Likes [Instant]", "category": "▶️ YouTube Likes", "rate": 400, "min": 50, "max": 10000, "icon": "fas fa-thumbs-up"},
-    {"id": 13, "name": "Facebook Page Followers & Likes", "category": "📘 Facebook Page Followers", "rate": 1100, "min": 100, "max": 10000, "icon": "fab fa-facebook"},
-    {"id": 14, "name": "Facebook Video Views [HQ]", "category": "📘 Facebook Video Views", "rate": 200, "min": 100, "max": 100000, "icon": "fas fa-video"},
-    {"id": 15, "name": "WhatsApp Channel Followers", "category": "💚 WhatsApp Channel Followers", "rate": 1500, "min": 100, "max": 25000, "icon": "fab fa-whatsapp"}
+    # Hostinger
+    {"id": 4317, "api_service_id": 101, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "🌐 Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1, "icon": "fas fa-globe"},
+    
+    # Instagram Services
+    {"id": 1, "api_service_id": 201, "name": "Instagram Followers [Low Drop] | Premium", "category": "📸 Instagram Followers", "rate": 450, "min": 10, "max": 20000, "icon": "fab fa-instagram"},
+    {"id": 2, "api_service_id": 202, "name": "Instagram Followers [Real - Mix Data]", "category": "📸 Instagram Followers", "rate": 350, "min": 50, "max": 50000, "icon": "fab fa-instagram"},
+    {"id": 3, "api_service_id": 203, "name": "Instagram Story Views [Instant]", "category": "📸 Instagram Story Views", "rate": 120, "min": 100, "max": 100000, "icon": "fas fa-eye"},
+    {"id": 4, "api_service_id": 204, "name": "Instagram Poll Reactions [Real Votes]", "category": "📸 Instagram Poll Reactions", "rate": 200, "min": 50, "max": 10000, "icon": "fas fa-poll"},
+    {"id": 5, "api_service_id": 205, "name": "Instagram Likes [Super Fast]", "category": "📸 Instagram Likes", "rate": 150, "min": 50, "max": 50000, "icon": "fas fa-heart"},
+
+    # TikTok Services
+    {"id": 6, "api_service_id": 301, "name": "TikTok Views [Super Fast & Cheap]", "category": "🎵 TikTok Views", "rate": 30, "min": 100, "max": 5000000, "icon": "fab fa-tiktok"},
+    {"id": 7, "api_service_id": 302, "name": "TikTok Followers [Real Looking]", "category": "🎵 TikTok Followers", "rate": 850, "min": 50, "max": 20000, "icon": "fab fa-tiktok"},
+    {"id": 8, "api_service_id": 303, "name": "TikTok Video Likes [High Quality]", "category": "🎵 TikTok Video Likes", "rate": 250, "min": 50, "max": 50000, "icon": "fab fa-tiktok"},
+    {"id": 9, "api_service_id": 304, "name": "TikTok Page / Profile Likes", "category": "🎵 TikTok Page Likes", "rate": 300, "min": 50, "max": 30000, "icon": "fab fa-tiktok"},
+
+    # YouTube Services
+    {"id": 10, "api_service_id": 401, "name": "YouTube Subscribers [Lifetime Guarantee]", "category": "▶️ YouTube Subscribers", "rate": 3500, "min": 50, "max": 5000, "icon": "fab fa-youtube"},
+    {"id": 11, "api_service_id": 402, "name": "YouTube Watchtime Hours [Monetization]", "category": "▶️ YouTube Watchtime", "rate": 7000, "min": 500, "max": 4000, "icon": "fas fa-clock"},
+    {"id": 12, "api_service_id": 403, "name": "YouTube Video Likes [Instant]", "category": "▶️ YouTube Likes", "rate": 400, "min": 50, "max": 10000, "icon": "fas fa-thumbs-up"},
+
+    # Facebook Services
+    {"id": 13, "api_service_id": 501, "name": "Facebook Page Followers & Likes", "category": "📘 Facebook Page Followers", "rate": 1100, "min": 100, "max": 10000, "icon": "fab fa-facebook"},
+    {"id": 14, "api_service_id": 502, "name": "Facebook Video Views [HQ]", "category": "📘 Facebook Video Views", "rate": 200, "min": 100, "max": 100000, "icon": "fas fa-video"},
+
+    # WhatsApp Services
+    {"id": 15, "api_service_id": 601, "name": "WhatsApp Channel Followers", "category": "💚 WhatsApp Channel Followers", "rate": 1500, "min": 100, "max": 25000, "icon": "fab fa-whatsapp"}
 ]
 
 def get_db_connection():
@@ -57,7 +74,8 @@ def init_db():
                 link TEXT,
                 quantity INTEGER,
                 price REAL,
-                status TEXT DEFAULT 'Pending'
+                status TEXT DEFAULT 'Pending',
+                api_order_id TEXT DEFAULT NULL
             )
         ''')
         cursor.execute('''
@@ -170,14 +188,34 @@ def dashboard():
                     total_price = (quantity * selected_service['rate']) / 1000.0 if selected_service['min'] > 1 else selected_service['rate']
                     
                     if user['balance'] >= total_price:
+                        # --- SEND ORDER TO SUPPLIER API ---
+                        api_order_id = None
+                        order_status = 'Pending'
+                        try:
+                            payload = {
+                                'key': SMM_API_KEY,
+                                'action': 'add',
+                                'service': selected_service['api_service_id'],
+                                'link': link,
+                                'quantity': quantity
+                            }
+                            response = requests.post(SMM_API_URL, data=payload, timeout=10)
+                            res_json = response.json()
+                            if 'order' in res_json:
+                                api_order_id = str(res_json['order'])
+                                order_status = 'In Progress'
+                        except Exception as api_err:
+                            print("API Connection Error:", api_err)
+
+                        # --- UPDATE DATABASE ---
                         conn = get_db_connection()
                         cursor = conn.cursor()
                         cursor.execute("UPDATE users SET balance = balance - ?, total_spent = total_spent + ? WHERE id = ?", (total_price, total_price, session['user_id']))
-                        cursor.execute("INSERT INTO orders (user_id, service, link, quantity, price, status) VALUES (?, ?, ?, ?, ?, ?)",
-                                       (session['user_id'], f"[{selected_service['id']}] {selected_service['name']}", link, quantity, total_price, 'Pending'))
+                        cursor.execute("INSERT INTO orders (user_id, service, link, quantity, price, status, api_order_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                       (session['user_id'], f"[{selected_service['id']}] {selected_service['name']}", link, quantity, total_price, order_status, api_order_id))
                         conn.commit()
                         conn.close()
-                        flash(f'Order place ho gaya! Total: PKR Rs. {total_price:.2f}', 'success')
+                        flash(f'Order successfully place ho gaya! Total: PKR Rs. {total_price:.2f}', 'success')
                     else:
                         flash('Aapke account mein balance kam hai!', 'danger')
             except Exception as e:
