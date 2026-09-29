@@ -1,273 +1,295 @@
-import os
-from flask import Flask, render_template_string, request, redirect, url_for, session, flash
-from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
-app = Flask(__name__)
-app.secret_key = 'smm_panel_super_secret_key_change_this'
+#define MAX_USERS 100
+#define MAX_ORDERS 500
 
-# Database configuration (SQLite)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///smm_panel.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+typedef struct {
+    char username[50];
+    char email[50];
+    char password[50];
+    float balance;
+} User;
 
-# User Database Model
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    password = db.Column(db.String(200), nullable=False)
-    balance = db.Column(db.Float, default=0.0)
+typedef struct {
+    int orderId;
+    char username[50];
+    char service[100];
+    char link[200];
+    int quantity;
+    float price;
+    char status[20];
+} Order;
 
-# Create database tables automatically
-with app.app_context():
-    db.create_all()
+User users[MAX_USERS];
+int userCount = 0;
+Order orders[MAX_ORDERS];
+int orderCount = 0;
 
-# HTML Templates embedded securely to avoid missing template folder issues
-HTML_LAYOUT = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SMM Panel - Next Wear</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        body { background-color: #121212; color: #e0e0e0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .navbar { background-color: #1f1f1f; border-bottom: 1px solid #333; }
-        .card { background-color: #1e1e1e; border: 1px solid #333; color: #fff; }
-        .form-control, .form-select { background-color: #2c2c2c; border: 1px solid #444; color: #fff; }
-        .form-control:focus, .form-select:focus { background-color: #2c2c2c; border-color: #0d6efd; color: #fff; box-shadow: none; }
-        .btn-primary { background-color: #0d6efd; border: none; }
-        a { color: #0d6efd; text-decoration: none; }
-        a:hover { color: #3d8bfd; }
-    </style>
-</head>
-<body>
-    <nav class="navbar navbar-expand-lg navbar-dark px-4">
-        <a class="navbar-brand fw-bold" href="/"><i class="fa-solid fa-bolt text-warning"></i> SMM Panel</a>
-        <div class="ms-auto">
-            {% if 'user_id' in session %}
-                <span class="text-light me-3"><i class="fa-solid fa-wallet text-success"></i> Balance: ${{ "%.2f"|format(session.get('balance', 0.0)) }}</span>
-                <a href="/dashboard" class="btn btn-sm btn-outline-light me-2">Dashboard</a>
-                <a href="/logout" class="btn btn-sm btn-danger">Logout</a>
-            {% else %}
-                <a href="/login" class="btn btn-sm btn-outline-light me-2">Login</a>
-                <a href="/register" class="btn btn-sm btn-primary">Register</a>
-            {% endif %}
-        </div>
-    </nav>
+int loggedInUserIndex = -1;
 
-    <div class="container mt-4">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ 'danger' if category == 'error' else 'success' }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+// Services List in PKR
+const char* services[] = {
+    "Instagram Followers [HQ] - Rs. 450 per 1000",
+    "Instagram Likes [Instant] - Rs. 150 per 1000",
+    "TikTok Views [Super Fast] - Rs. 30 per 1000",
+    "TikTok Followers [Real] - Rs. 850 per 1000",
+    "YouTube Subscribers [Lifetime] - Rs. 3500 per 1000"
+};
+float serviceRates[] = {450.0, 150.0, 30.0, 850.0, 3500.0};
+int totalServices = 5;
 
-        {% block content %}{% endblock %}
-    </div>
+void loadData() {
+    FILE *fUser = fopen("users.txt", "r");
+    if (fUser != NULL) {
+        userCount = 0;
+        while (fscanf(fUser, "%s %s %s %f", users[userCount].username, users[userCount].email, users[userCount].password, &users[userCount].balance) == 4) {
+            userCount++;
+            if (userCount >= MAX_USERS) break;
+        }
+        fclose(fUser);
+    }
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-</html>
-"""
+    FILE *fOrder = fopen("orders.txt", "r");
+    if (fOrder != NULL) {
+        orderCount = 0;
+        while (fscanf(fOrder, "%d %s %s %s %d %f %s", &orders[orderCount].orderId, orders[orderCount].username, orders[orderCount].service, orders[orderCount].link, &orders[orderCount].quantity, &orders[orderCount].price, orders[orderCount].status) == 7) {
+            orderCount++;
+            if (orderCount >= MAX_ORDERS) break;
+        }
+        fclose(fOrder);
+    }
+}
 
-INDEX_HTML = HTML_LAYOUT.replace('{% block content %}{% endblock %}', """
-<div class="row justify-content-center mt-5">
-    <div class="col-md-8 text-center">
-        <h1 class="display-4 fw-bold mb-3">Best & Cheapest SMM Panel</h1>
-        <p class="lead text-secondary mb-4">Boost your social media presence instantly with our automated services.</p>
-        {% if 'user_id' not in session %}
-            <a href="/register" class="btn btn-primary btn-lg px-4 me-2">Get Started</a>
-            <a href="/login" class="btn btn-outline-light btn-lg px-4">Login</a>
-        {% else %}
-            <a href="/dashboard" class="btn btn-success btn-lg px-4">Go to Dashboard</a>
-        {% endif %}
-    </div>
-</div>
-""")
+void saveUsers() {
+    FILE *fUser = fopen("users.txt", "w");
+    if (fUser != NULL) {
+        for (int i = 0; i < userCount; i++) {
+            fprintf(fUser, "%s %s %s %.2f\n", users[i].username, users[i].email, users[i].password, users[i].balance);
+        }
+        fclose(fUser);
+    }
+}
 
-LOGIN_HTML = HTML_LAYOUT.replace('{% block content %}{% endblock %}', """
-<div class="row justify-content-center mt-5">
-    <div class="col-md-5">
-        <div class="card p-4 shadow-sm">
-            <h3 class="text-center mb-4">Login to Your Account</h3>
-            <form method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Username or Email</label>
-                    <input type="text" name="username_or_email" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2">Login</button>
-            </form>
-            <div class="text-center mt-3">
-                <small class="text-secondary">Don't have an account? <a href="/register">Register here</a></small>
-            </div>
-        </div>
-    </div>
-</div>
-""")
+void saveOrders() {
+    FILE *fOrder = fopen("orders.txt", "w");
+    if (fOrder != NULL) {
+        for (int i = 0; i < orderCount; i++) {
+            fprintf(fOrder, "%d %s %s %s %d %.2f %s\n", orders[i].orderId, orders[i].username, orders[i].service, orders[i].link, orders[i].quantity, orders[i].price, orders[i].status);
+        }
+        fclose(fOrder);
+    }
+}
 
-REGISTER_HTML = HTML_LAYOUT.replace('{% block content %}{% endblock %}', """
-<div class="row justify-content-center mt-4">
-    <div class="col-md-5">
-        <div class="card p-4 shadow-sm">
-            <h3 class="text-center mb-4">Create an Account</h3>
-            <form method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Username</label>
-                    <input type="text" name="username" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Email Address</label>
-                    <input type="email" name="email" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input type="password" name="password" class="form-control" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100 py-2">Register</button>
-            </form>
-            <div class="text-center mt-3">
-                <small class="text-secondary">Already have an account? <a href="/login">Login here</a></small>
-            </div>
-        </div>
-    </div>
-</div>
-""")
-
-DASHBOARD_HTML = HTML_LAYOUT.replace('{% block content %}{% endblock %}', """
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card p-4 mb-4">
-            <h2>Welcome back, <span class="text-primary">{{ username }}</span>!</h2>
-            <p class="text-secondary mb-0">Manage your orders and scale your social media effortlessly.</p>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-4">
-            <h4 class="mb-3"><i class="fa-solid fa-cart-plus text-primary"></i> New Order</h4>
-            <form method="POST">
-                <div class="mb-3">
-                    <label class="form-label">Service Category</label>
-                    <select class="form-select">
-                        <option>Instagram Followers (HQ)</option>
-                        <option>Instagram Likes</option>
-                        <option>TikTok Views & Likes</option>
-                        <option>YouTube Subscribers</option>
-                    </select>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Target Link</label>
-                    <input type="url" class="form-control" placeholder="https://..." required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Quantity</label>
-                    <input type="number" class="form-control" value="1000" min="100" required>
-                </div>
-                <button type="submit" class="btn btn-primary w-100">Submit Order</button>
-            </form>
-        </div>
-    </div>
-    <div class="col-md-6">
-        <div class="card p-4 h-100">
-            <h4 class="mb-3"><i class="fa-solid fa-chart-line text-success"></i> Quick Stats</h4>
-            <ul class="list-group list-group-flush bg-transparent">
-                <li class="list-group-item bg-transparent text-light d-flex justify-content-between align-items-center">
-                    Total Orders <span class="badge bg-primary rounded-pill">0</span>
-                </li>
-                <li class="list-group-item bg-transparent text-light d-flex justify-content-between align-items-center">
-                    Account Balance <span class="text-success fw-bold">${{ "%.2f"|format(balance) }}</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-</div>
-""")
-
-@app.route('/')
-def index():
-    return render_template_string(INDEX_HTML)
-
-@app.route('/register', methods=['GET', 'POST'])
-def register():
-    if request.method == 'POST':
-        username = request.form.get('username').strip()
-        email = request.form.get('email').strip().lower()
-        password = request.form.get('password')
-
-        # Check if user already exists
-        existing_user = User.query.filter((User.username == username) | (User.email == email)).first()
-        if existing_user:
-            flash('Username or Email already exists! Please login.', 'error')
-            return redirect(url_for('login'))
-
-        hashed_password = generate_password_hash(password)
-        new_user = User(username=username, email=email, password=hashed_password, balance=0.0)
-        
-        try:
-            db.session.add(new_user)
-            db.session.commit()
-            flash('Registration successful! Please login.', 'success')
-            return redirect(url_for('login'))
-        except Exception as e:
-            db.session.rollback()
-            flash('An error occurred. Please try again.', 'error')
-
-    return render_template_string(REGISTER_HTML)
-
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        identifier = request.form.get('username_or_email').strip()
-        password = request.form.get('password')
-
-        # Allow login via either username or email
-        user = User.query.filter((User.username == identifier) | (User.email == identifier.lower())).first()
-
-        if user and check_password_hash(user.password, password):
-            session['user_id'] = user.id
-            session['username'] = user.username
-            session['balance'] = user.balance
-            flash('Logged in successfully!', 'success')
-            return redirect(url_for('dashboard'))
-        else:
-            flash('Invalid username/email or password!', 'error')
-
-    return render_template_string(LOGIN_HTML)
-
-@app.route('/dashboard', methods=['GET', 'POST'])
-def dashboard():
-    if 'user_id' not in session:
-        flash('Please login to access the dashboard.', 'error')
-        return redirect(url_for('login'))
+void registerUser() {
+    if (userCount >= MAX_USERS) {
+        printf("\n[Error] Database full hai!\n");
+        return;
+    }
+    User u;
+    printf("\n--- Naya Account Banayein ---\n");
+    printf("Username enter karein: ");
+    scanf("%s", u.username);
     
-    user = User.query.get(session['user_id'])
-    if not user:
-        session.clear()
-        return redirect(url_for('login'))
+    // Check if user exists
+    for (int i = 0; i < userCount; i++) {
+        if (strcmp(users[i].username, u.username) == 0) {
+            printf("[Error] Yeh username pehle se mojood hai!\n");
+            return;
+        }
+    }
 
-    if request.method == 'POST':
-        flash('Order placed successfully!', 'success')
-        return redirect(url_for('dashboard'))
+    printf("Email enter karein: ");
+    scanf("%s", u.email);
+    printf("Password enter karein: ");
+    scanf("%s", u.password);
+    
+    // Balance strictly 0.00 on signup (No free bonus)
+    u.balance = 0.00;
 
-    return render_template_string(DASHBOARD_HTML, username=user.username, balance=user.balance)
+    users[userCount] = u;
+    userCount++;
+    saveUsers();
+    printf("\n[Success] Account kamyaabi se ban gaya hai! Ab balance Rs. 0.00 hai.\n");
+}
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    flash('Logged out successfully.', 'success')
-    return redirect(url_for('index'))
+void loginUser() {
+    char uname[50], pass[50];
+    printf("\n--- Login ---\n");
+    printf("Username enter karein: ");
+    scanf("%s", uname);
+    printf("Password enter karein: ");
+    scanf("%s", pass);
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    for (int i = 0; i < userCount; i++) {
+        if (strcmp(users[i].username, uname) == 0 && strcmp(users[i].password, pass) == 0) {
+            loggedInUserIndex = i;
+            printf("\n[Success] Welcome back, %s!\n", users[i].username);
+            return;
+        }
+    }
+    printf("\n[Error] Ghalat Username ya Password!\n");
+}
+
+void viewServices() {
+    printf("\n--- Available SMM Services (PKR) ---\n");
+    for (int i = 0; i < totalServices; i++) {
+        printf("%d. %s\n", i + 1, services[i]);
+    }
+}
+
+void placeOrder() {
+    if (loggedInUserIndex == -1) return;
+
+    viewServices();
+    int choice, qty;
+    char link[200];
+
+    printf("\nService ka number select karein (1-%d): ", totalServices);
+    scanf("%d", &choice);
+
+    if (choice < 1 || choice > totalServices) {
+        printf("[Error] Ghalat service select ki gayi hai!\n");
+        return;
+    }
+
+    printf("Target Link enter karein: ");
+    scanf("%s", link);
+    printf("Quantity enter karein: ");
+    scanf("%d", &qty);
+
+    float totalPrice = (qty * serviceRates[choice - 1]) / 1000.0;
+
+    if (users[loggedInUserIndex].balance < totalPrice) {
+        printf("\n[Error] Balance kam hai! Aapka balance Rs. %.2f hai jabke order ki cost Rs. %.2f hai.\n", 
+               users[loggedInUserIndex].balance, totalPrice);
+        printf("Pehle Add Funds ke zariye balance update karein.\n");
+        return;
+    }
+
+    // Deduct balance and create order
+    users[loggedInUserIndex].balance -= totalPrice;
+    
+    Order o;
+    o.orderId = orderCount + 1001;
+    strcpy(o.username, users[loggedInUserIndex].username);
+    strcpy(o.service, services[choice - 1]);
+    strcpy(o.link, link);
+    o.quantity = qty;
+    o.price = totalPrice;
+    strcpy(o.status, "In_Progress");
+
+    orders[orderCount] = o;
+    orderCount++;
+
+    saveUsers();
+    saveOrders();
+
+    printf("\n[Success] Order kamyaabi se place ho gaya! Order ID: #%d, Total Cost: Rs. %.2f\n", o.orderId, totalPrice);
+}
+
+void viewOrders() {
+    if (loggedInUserIndex == -1) return;
+
+    printf("\n--- Aapke Orders ki History ---\n");
+    int found = 0;
+    for (int i = 0; i < orderCount; i++) {
+        if (strcmp(orders[i].username, users[loggedInUserIndex].username) == 0) {
+            printf("ID: #%d | Service: %s | Link: %s | Qty: %d | Cost: Rs. %.2f | Status: %s\n",
+                   orders[i].orderId, orders[i].service, orders[i].link, orders[i].quantity, orders[i].price, orders[i].status);
+            found = 1;
+        }
+    }
+    if (!found) {
+        printf("Aapne abhi tak koi order place nahi kiya.\n");
+    }
+}
+
+void addFundsMenu() {
+    if (loggedInUserIndex == -1) return;
+
+    printf("\n--- Add Funds (Manual Method) ---\n");
+    printf("Easypaisa / NayaPay / SadaPay Title: Arman Akhtar\n");
+    printf("Account Number: 03281583582\n");
+    printf("Raqam transfer karne ke baad admin se rabta karein taaki balance update ho.\n");
+    
+    int choice;
+    printf("\nKya aap admin hain aur khud balance add karna chahte hain? (1. Haan / 2. Nahi): ");
+    scanf("%d", &choice);
+    if (choice == 1) {
+        float amt;
+        printf("Kitni rakam add karni hai? (Rs): ");
+        scanf("%f", &amt);
+        users[loggedInUserIndex].balance += amt;
+        saveUsers();
+        printf("[Success] Rs. %.2f kamyaabi se add ho gaye hain! Naya Balance: Rs. %.2f\n", amt, users[loggedInUserIndex].balance);
+    }
+}
+
+void dashboard() {
+    int choice;
+    while (loggedInUserIndex != -1) {
+        printf("\n====== SMM PANEL DASHBOARD (User: %s | Balance: Rs. %.2f) ======\n", 
+               users[loggedInUserIndex].username, users[loggedInUserIndex].balance);
+        printf("1. View Services\n");
+        printf("2. Place New Order\n");
+        printf("3. View Order History\n");
+        printf("4. Add Funds Info / Manual Update\n");
+        printf("5. Logout\n");
+        printf("Apni choice enter karein: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                viewServices();
+                break;
+            case 2:
+                placeOrder();
+                break;
+            case 3:
+                viewOrders();
+                break;
+            case 4:
+                addFundsMenu();
+                break;
+            case 5:
+                loggedInUserIndex = -1;
+                printf("[Info] Logged out successfully.\n");
+                return;
+            default:
+                printf("[Error] Ghalat choice! Dobara koshish karein.\n");
+        }
+    }
+}
+
+int main() {
+    loadData();
+    int choice;
+    while (1) {
+        printf("\n========== ARMAN SMM PANEL (C LANGUAGE) ==========\n");
+        printf("1. Login\n");
+        printf("2. Sign Up (Naya Account)\n");
+        printf("3. Exit\n");
+        printf("Apni choice enter karein: ");
+        scanf("%d", &choice);
+
+        switch (choice) {
+            case 1:
+                loginUser();
+                if (loggedInUserIndex != -1) {
+                    dashboard();
+                }
+                break;
+            case 2:
+                registerUser();
+                break;
+            case 3:
+                printf("Program band ho raha hai. Allah Hafiz!\n");
+                exit(0);
+            default:
+                printf("[Error] Ghalat choice! Dobara koshish karein.\n");
+        }
+    }
+    return 0;
+}
