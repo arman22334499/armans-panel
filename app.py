@@ -39,6 +39,10 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
+        # Purane tables drop kar ke fresh aur correct tables banayein ge taaki error na aaye
+        cursor.execute("DROP TABLE IF EXISTS users")
+        cursor.execute("DROP TABLE IF EXISTS services")
+        
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -94,17 +98,13 @@ def init_db():
             )
         ''')
         
-        cursor.execute("SELECT COUNT(*) FROM services")
-        if cursor.fetchone()[0] == 0:
-            for s in INITIAL_SERVICES:
-                cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                               (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
+        for s in INITIAL_SERVICES:
+            cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                           (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
 
-        cursor.execute("SELECT * FROM users WHERE username = 'admin'")
-        if not cursor.fetchone():
-            admin_pass = generate_password_hash('admin123')
-            cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
-                           ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
+        admin_pass = generate_password_hash('admin123')
+        cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
+                       ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
         
         conn.commit()
         conn.close()
