@@ -9,8 +9,8 @@ app.secret_key = 'arman_smm_panel_secure_key_2026'
 
 # --- SMM SUPPLIER API CONFIGURATION ---
 # Yahan aap apne supplier (jahan se aap services lete hain) ki API URL aur API Key dalenge
-SMM_API_URL = "https://supplier-smm-panel-url.com/api/v2" 
-SMM_API_KEY = "YOUR_SUPPLIER_API_KEY_HERE"
+SMM_API_URL = "https://justanotherpanel.com/" 
+SMM_API_KEY = "6eeaf23acb5fa39205d87044412eb32a"
 
 SERVICES_LIST = [
     # Hostinger
