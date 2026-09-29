@@ -165,6 +165,9 @@ def dashboard():
     cursor.execute("SELECT * FROM services")
     services = cursor.fetchall()
     
+    cursor.execute("SELECT * FROM orders WHERE user_id = ? ORDER BY id DESC", (session['user_id'],))
+    user_orders = cursor.fetchall()
+    
     if request.method == 'POST':
         service_id = request.form.get('service_id')
         link = request.form.get('link')
@@ -187,7 +190,7 @@ def dashboard():
         return redirect(url_for('dashboard'))
     
     conn.close()
-    return render_template('dashboard.html', user=user, services=services)
+    return render_template('dashboard.html', user=user, services=services, orders=user_orders)
 
 @app.route('/add_funds', methods=['GET', 'POST'])
 def add_funds():
