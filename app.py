@@ -1,4 +1,5 @@
 import os
+import traceback
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -12,37 +13,42 @@ def get_db_connection():
     return conn
 
 def init_db():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    # Purani tables hata kar bilkul fresh aur complete tables bana rahe hain taake koi error na aaye
-    cursor.execute('DROP TABLE IF EXISTS orders')
-    cursor.execute('DROP TABLE IF EXISTS users')
-    
-    cursor.execute('''
-        CREATE TABLE users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            balance REAL DEFAULT 0.0
-        )
-    ''')
-    cursor.execute('''
-        CREATE TABLE orders (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id INTEGER,
-            service TEXT,
-            link TEXT,
-            quantity INTEGER,
-            price REAL,
-            status TEXT DEFAULT 'Pending'
-        )
-    ''')
-    conn.commit()
-    conn.close()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                email TEXT UNIQUE NOT NULL,
+                password TEXT NOT NULL,
+                balance REAL DEFAULT 0.0
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS orders (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                service TEXT,
+                link TEXT,
+                quantity INTEGER,
+                price REAL,
+                status TEXT DEFAULT 'Pending'
+            )
+        ''')
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("Database Init Error:", e)
 
-# Server start hone par database initialize ho jayega
 init_db()
+
+# Asal error screen par dikhane ke liye handler
+@app.errorhandler(Exception)
+def handle_exception(e):
+    # Yeh code server crash hone par asal waja screen par print kar dega taake pata chalay masla kahan hai
+    tb = traceback.format_exc()
+    return f"<h1>Server Error (500)</h1><pre>{tb}</pre>", 500
 
 @app.route('/')
 def index():
@@ -132,6 +138,7 @@ def add_funds():
         return redirect(url_for('login'))
     return render_template('add_funds.html', username=session.get('username'))
 
+@app.routes('/services' if hasattr(app, 'routes') else '/services') # just a safe guard
 @app.route('/services')
 def services():
     if 'user_id' not in session:
