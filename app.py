@@ -62,8 +62,8 @@ def init_db():
             ]
             cursor.executemany("INSERT INTO services (name, category, rate) VALUES (?, ?, ?)", default_services)
 
-        # Har dafa app start hone par purana admin delete karke naya set kar dega
-        cursor.execute("DELETE FROM users WHERE username = 'admin'")
+        # Admin ko safe tarike se reset ya update karna
+        cursor.execute("DELETE FROM users WHERE username = 'admin' OR email = 'admin@armansmm.com'")
         admin_pass = generate_password_hash('admin123')
         cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
                        ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
