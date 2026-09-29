@@ -39,7 +39,6 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Purane tables drop kar ke fresh aur correct tables banayein ge taaki error na aaye
         cursor.execute("DROP TABLE IF EXISTS users")
         cursor.execute("DROP TABLE IF EXISTS services")
         
@@ -173,19 +172,34 @@ def signup():
 
         if not username or not email or not password:
             flash('Tamam fields bharna lazmi hain!', 'danger')
-        else:
+            return render_template('signup.html')
+        
+        try:
             hashed_password = generate_password_hash(password)
-            try:
-                conn = get_db_connection()
-                cursor = conn.cursor()
-                cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)", 
-                               (username, email, hashed_password, 162.95, 52.05, 0))
-                conn.commit()
-                conn.close()
-                flash('Account kamyabi se ban gaya! Ab aap login kar sakte hain.', 'success')
-                return redirect(url_for('login'))
-            except sqlite3.IntegrityError:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            
+            # Check karein ke username ya email pehle se mojood toh nahi
+            cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email))
+            existing_user = cursor.fetchone()
+            
+            if existing_user:
                 flash('Yeh Email ya Username pehle se mojood hai!', 'danger')
+                conn.close()
+                return render_template('signup.html')
+
+            cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)", 
+                           (username, email, hashed_password, 162.95, 52.05, 0))
+            conn.commit()
+            conn.close()
+            flash('Account kamyabi se ban gaya! Ab aap login kar sakte hain.', 'success')
+            return redirect(url_for('login'))
+            
+        except Exception as e:
+            print("Signup Error:", str(e))
+            flash(f'Signup mein masla aaya hai: {str(e)}', 'danger')
+            return render_template('signup.html')
+            
     return render_template('signup.html')
 
 @app.route('/dashboard', methods=['GET', 'POST'])
