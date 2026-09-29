@@ -33,7 +33,7 @@ def init_db():
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                balance REAL DEFAULT 5000.00
+                balance REAL DEFAULT 0.00
             )
         ''')
         cursor.execute('''
@@ -152,11 +152,10 @@ def login():
         login_success = False
         if user:
             stored_password = user['password']
-            # Check password hash securely with fallback
             try:
                 if check_password_hash(stored_password, password):
                     login_success = True
-                elif stored_password == password: # Fallback if unhashed
+                elif stored_password == password:
                     login_success = True
             except:
                 if stored_password == password:
@@ -176,6 +175,7 @@ def login():
         <meta charset="UTF-8">
         <title>Login - Arman's Panel</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
     <body class="bg-light">
         <div class="container d-flex justify-content-center align-items-center vh-100">
@@ -198,7 +198,15 @@ def login():
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Password</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <div class="input-group">
+                            <input type="password" name="password" id="loginPassword" class="form-control" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('loginPassword', 'eyeIcon1')">
+                                <i class="fas fa-eye" id="eyeIcon1"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <a href="/forgot-password" class="text-decoration-none small">Password bhool gaye?</a>
                     </div>
                     <button type="submit" class="btn btn-primary w-100 py-2 fw-bold">Sign In</button>
                 </form>
@@ -207,6 +215,21 @@ def login():
                 </div>
             </div>
         </div>
+        <script>
+            function togglePassword(fieldId, iconId) {
+                const passwordField = document.getElementById(fieldId);
+                const eyeIcon = document.getElementById(iconId);
+                if (passwordField.type === "password") {
+                    passwordField.type = "text";
+                    eyeIcon.classList.remove("fa-eye");
+                    eyeIcon.classList.add("fa-eye-slash");
+                } else {
+                    passwordField.type = "password";
+                    eyeIcon.classList.remove("fa-eye-slash");
+                    eyeIcon.classList.add("fa-eye");
+                }
+            }
+        </script>
     </body>
     </html>
     '''
@@ -227,10 +250,10 @@ def signup():
                 conn = get_db_connection()
                 cursor = conn.cursor()
                 cursor.execute("INSERT INTO users (username, email, password, balance) VALUES (?, ?, ?, ?)", 
-                               (username, email, hashed_password, 5000.00))
+                               (username, email, hashed_password, 0.00))
                 conn.commit()
                 conn.close()
-                flash('Account kamyaabi se ban gaya! Free Rs. 5000 bonus add ho gaye hain, ab login karein.', 'success')
+                flash('Account kamyaabi se ban gaya! Ab aap login kar sakte hain.', 'success')
                 return redirect(url_for('login'))
             except sqlite3.IntegrityError:
                 flash('Yeh Email ya Username pehle se mojood hai!', 'danger')
@@ -242,13 +265,14 @@ def signup():
         <meta charset="UTF-8">
         <title>Sign Up - Arman's Panel</title>
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     </head>
     <body class="bg-light">
         <div class="container d-flex justify-content-center align-items-center vh-100">
             <div class="card p-4 shadow-lg" style="width: 420px;">
                 <div class="text-center mb-4">
                     <h3 class="fw-bold text-success">📝 Create Account</h3>
-                    <p class="text-muted">Get Rs. 5000 free bonus on signup</p>
+                    <p class="text-muted">Register to start placing orders</p>
                 </div>
                 {% with messages = get_flashed_messages(with_categories=true) %}
                     {% if messages %}
@@ -268,7 +292,12 @@ def signup():
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Password</label>
-                        <input type="password" name="password" class="form-control" required>
+                        <div class="input-group">
+                            <input type="password" name="password" id="signupPassword" class="form-control" required>
+                            <button type="button" class="btn btn-outline-secondary" onclick="togglePassword('signupPassword', 'eyeIcon2')">
+                                <i class="fas fa-eye" id="eyeIcon2"></i>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn btn-success w-100 py-2 fw-bold">Sign Up</button>
                 </form>
@@ -277,10 +306,51 @@ def signup():
                 </div>
             </div>
         </div>
+        <script>
+            function togglePassword(fieldId, iconId) {
+                const passwordField = document.getElementById(fieldId);
+                const eyeIcon = document.getElementById(iconId);
+                if (passwordField.type === "password") {
+                    passwordField.type = "text";
+                    eyeIcon.classList.remove("fa-eye");
+                    eyeIcon.classList.add("fa-eye-slash");
+                } else {
+                    passwordField.type = "password";
+                    eyeIcon.classList.remove("fa-eye-slash");
+                    eyeIcon.classList.add("fa-eye");
+                }
+            }
+        </script>
     </body>
     </html>
     '''
     return render_template_string(signup_template)
+
+@app.route('/forgot-password')
+def forgot_password():
+    forgot_template = '''
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Forgot Password - Arman's Panel</title>
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    </head>
+    <body class="bg-light">
+        <div class="container d-flex justify-content-center align-items-center vh-100">
+            <div class="card p-4 shadow-lg text-center" style="width: 420px;">
+                <h3 class="fw-bold text-danger mb-3">🔑 Password Reset</h3>
+                <p class="text-muted">Password recover karne ke liye hamare WhatsApp support par rabta karein taaki admin aapka password reset kar sake.</p>
+                <a href="https://wa.me/923281583582" target="_blank" class="btn btn-success fw-bold px-4 py-2 mb-3"><i class="fab fa-whatsapp me-2"></i> Contact on WhatsApp</a>
+                <br>
+                <a href="/login" class="text-decoration-none fw-bold">Wapas Login par jayein</a>
+            </div>
+        </div>
+    </body>
+    </html>
+    '''
+    return render_template_string(forgot_template)
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
@@ -311,7 +381,7 @@ def dashboard():
                         conn.close()
                         flash(f'Order kamyaabi se place ho gaya! Total cost: Rs. {total_price:.2f}', 'success')
                     else:
-                        flash('Aapke account mein balance kam hai!', 'danger')
+                        flash('Aapke account mein balance kam hai! Pehle Add Funds karein.', 'danger')
             except Exception as e:
                 flash(f'Error: {str(e)}', 'danger')
             return redirect(url_for('dashboard'))
