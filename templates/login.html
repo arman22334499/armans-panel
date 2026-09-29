@@ -2,33 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login - SMM Panel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arman SMM Panel - Login</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+            color: #fff;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-card {
+            background: #ffffff;
+            color: #333;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+            width: 100%;
+            max-width: 400px;
+        }
+        .login-card h2 {
+            font-weight: bold;
+            color: #1e1e2f;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .btn-custom {
+            background-color: #4e73df;
+            color: white;
+            font-weight: bold;
+        }
+        .btn-custom:hover {
+            background-color: #2e59d9;
+            color: white;
+        }
+    </style>
 </head>
-<body class="bg-light d-flex justify-content-center align-items-center vh-100">
-    <div class="card p-4 shadow" style="width: 350px;">
-        <h3 class="text-center mb-3">Login</h3>
+<body>
+    <div class="login-card">
+        <h2>Arman SMM Panel</h2>
         
-        <!-- Error ya Success Messages dikhane ke liye -->
+        <!-- Flash Error/Success Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                    <div class="alert alert-{{ category }} py-2 text-center" role="alert">
+                        {{ message }}
+                    </div>
                 {% endfor %}
             {% endif %}
         {% endwith %}
 
         <form method="POST">
             <div class="mb-3">
-                <label>Email ya Username</label>
-                <input type="text" name="email" class="form-control" required placeholder="admin ya email">
+                <label class="form-label">Email ya Username</label>
+                <input type="text" name="email" class="form-control" required placeholder="admin ya email enter karein">
             </div>
             <div class="mb-3">
-                <label>Password</label>
+                <label class="form-label">Password</label>
                 <input type="password" name="password" class="form-control" required placeholder="********">
             </div>
-            <button type="submit" class="btn btn-primary w-100">Sign In</button>
+            <button type="submit" class="btn btn-custom w-100 py-2">Sign In</button>
         </form>
+        
+        <div class="text-center mt-3">
+            <small class="text-muted">Account nahi hai? <a href="{{ url_for('signup') }}" class="text-decoration-none">Sign Up</a></small>
+        </div>
     </div>
 </body>
 </html>
