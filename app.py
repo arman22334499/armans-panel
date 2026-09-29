@@ -45,12 +45,10 @@ def init_db():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS users")
-        cursor.execute("DROP TABLE IF EXISTS orders")
-        cursor.execute("DROP TABLE IF EXISTS tickets")
         
+        # Tables creation
         cursor.execute('''
-            CREATE TABLE users (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -60,7 +58,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE orders (
+            CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 service TEXT,
@@ -71,12 +69,22 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE tickets (
+            CREATE TABLE IF NOT EXISTS tickets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 subject TEXT,
                 message TEXT,
                 status TEXT DEFAULT 'Open'
+            )
+        ''')
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS transactions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                gateway TEXT,
+                amount REAL,
+                transaction_id TEXT,
+                status TEXT DEFAULT 'Completed'
             )
         ''')
         conn.commit()
@@ -208,12 +216,45 @@ def orders():
     user = get_user_data(session['user_id'])
     return render_template('orders.html', orders=orders_list, user=user)
 
-@app.route('/addfunds')
+@app.route('/addfunds', methods=['GET', 'POST'])
 def add_funds():
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        gateway = request.form.get('gateway')
+        amount_str = request.form.get('amount')
+        transaction_id = request.form.get('transaction_id')
+        
+        if amount_str and transaction_id:
+            try:
+                amount = float(amount_str)
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                # User ke balance mein actual amount add kar dein
+                cursor.execute("UPDATE users SET balance = balance + ? WHERE id = ?", (amount, session['user_id']))
+                # Transaction record save karein
+                cursor.execute("INSERT INTO transactions (user_id, gateway, amount, transaction_id, status) VALUES (?, ?, ?, ?, ?)",
+                               (session['user_id'], gateway, amount, transaction_id, 'Completed'))
+                conn.commit()
+                conn.close()
+                flash(f'Rs. {amount:.2f} successfully aapke account mein add ho gaye hain!', 'success')
+            except Exception as e:
+                flash(f'Error adding funds: {str(e)}', 'danger')
+        return redirect(url_for('add_funds'))
+    
+    # Transaction history fetch karein
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT id, gateway, amount, transaction_id, status FROM transactions WHERE user_id = ? ORDER BY id DESC", (session['user_id'],))
+        transactions = cursor.fetchall()
+        conn.close()
+    except:
+        transactions = []
+
     user = get_user_data(session['user_id'])
-    return render_template('add_funds.html', user=user)
+    return render_template('add_funds.html', user=user, transactions=transactions)
 
 @app.route('/support-tickets', methods=['GET', 'POST'])
 def support_tickets():
