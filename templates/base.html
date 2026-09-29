@@ -1,35 +1,95 @@
-<!-- Profile Dropdown Menu -->
-<div class="dropdown">
-    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-        <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; background: linear-gradient(135deg, #ff7700, #ff5500); font-size: 1.1rem;">
-            {{ user.username[0]|upper if user and user.username else 'A' }}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Arman SMM Panel{% endblock %}</title>
+    <!-- Bootstrap 5 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .main-card { background: #ffffff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); padding: 25px; border: 1px solid #f1f5f9; }
+        .btn-orange { background-color: #ff7700; color: white; border: none; }
+        .btn-orange:hover { background-color: #e06600; color: white; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold text-dark" href="#">
+                <i class="fas fa-fire text-warning me-2"></i> Arman SMM Panel
+            </a>
+            
+            <div class="d-flex align-items-center gap-3 ms-auto">
+                {% if user %}
+                <!-- Balance Badge -->
+                <div class="d-none d-md-flex align-items-center bg-light px-3 py-1.5 rounded-pill border">
+                    <i class="fas fa-wallet text-success me-2"></i>
+                    <span class="small fw-bold text-secondary">Balance:</span>
+                    <span class="ms-1 fw-bold text-dark">Rs. {{ "%.2f"|format(user.balance) }}</span>
+                </div>
+
+                <!-- Profile Dropdown Menu -->
+                <div class="dropdown">
+                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle hide-arrow" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 42px; height: 42px; background: linear-gradient(135deg, #ff7700, #ff5500); font-size: 1.1rem; cursor: pointer;">
+                            {{ user.username[0]|upper if user and user.username else 'A' }}
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" aria-labelledby="profileDropdown" style="min-width: 220px;">
+                        <li class="px-3 py-2 border-bottom mb-2">
+                            <span class="d-block text-muted" style="font-size: 0.75rem;">Signed in as</span>
+                            <span class="fw-bold text-dark text-truncate d-block">{{ user.username }}</span>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('add_funds') }}">
+                                <i class="fas fa-wallet text-warning"></i> Add Funds
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="#">
+                                <i class="fas fa-cog text-secondary"></i> Settings
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('signup') }}">
+                                <i class="fas fa-user-plus text-primary"></i> Add Another Account
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-2"></li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-danger fw-bold bg-danger bg-opacity-10" href="{{ url_for('logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> Log Out
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
         </div>
-    </a>
-    <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-4 p-2 mt-2" aria-labelledby="profileDropdown" style="min-width: 200px;">
-        <li class="px-3 py-2 border-bottom mb-2">
-            <span class="d-block small text-muted">Signed in as</span>
-            <span class="fw-bold text-dark">{{ user.username if user else 'Member' }}</span>
-        </li>
-        <li>
-            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('add_funds') }}">
-                <i class="fas fa-wallet text-warning"></i> Add Funds
-            </a>
-        </li>
-        <li>
-            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="#">
-                <i class="fas fa-cog text-secondary"></i> Settings
-            </a>
-        </li>
-        <li>
-            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('signup') }}">
-                <i class="fas fa-user-plus text-primary"></i> Add Another Account
-            </a>
-        </li>
-        <li><hr class="dropdown-divider my-2"></li>
-        <li>
-            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-danger fw-bold bg-danger bg-opacity-10" href="{{ url_for('logout') }}">
-                <i class="fas fa-sign-out-alt"></i> Log Out
-            </a>
-        </li>
-    </ul>
-</div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container mb-5">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle CDN (Very important for dropdown to work) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
