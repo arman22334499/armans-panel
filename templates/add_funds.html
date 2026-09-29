@@ -1,144 +1,41 @@
 {% extends "base.html" %}
-{% set active_tab = 'addfunds' %}
-{% block title %}Add Funds{% endblock %}
+{% block title %}Add Funds - Pak SMM Panel{% endblock %}
+{% block header_title %}Add Funds{% endblock %}
+{% set active_tab = 'add_funds' %}
 
 {% block content %}
-<div class="main-card mb-4" style="background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border: 1px solid #ffedd5;">
-    <div class="d-flex align-items-center gap-3 mb-4">
-        <div class="rounded-circle p-3 text-white" style="background: linear-gradient(135deg, #ff7700, #ff5500); box-shadow: 0 4px 15px rgba(255,119,0,0.3);">
-            <i class="fas fa-wallet fa-lg"></i>
-        </div>
-        <div>
-            <h4 class="fw-bold mb-1" style="color: #1e293b;">Add Funds to Balance</h4>
-            <p class="text-muted small mb-0">Top up your Arman SMM Panel account instantly</p>
-        </div>
-    </div>
-
-    <!-- Payment Form -->
-    <form method="POST" class="mb-4">
-        <div class="mb-3">
-            <label class="form-label fw-bold text-secondary small text-uppercase">Choose Payment Method</label>
-            <select class="form-select" name="gateway" required>
-                <option value="JazzCash / EasyPaisa">JazzCash / EasyPaisa (Pakistan)</option>
-                <option value="Binance Pay / USDT">Binance Pay / USDT</option>
-                <option value="PayTM">PayTM</option>
-                <option value="Skrill">Skrill</option>
-            </select>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label fw-bold text-secondary small text-uppercase">Enter Amount (PKR / USD)</label>
-            <input type="number" step="0.01" class="form-control" name="amount" placeholder="e.g. 1000" required>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label fw-bold text-secondary small text-uppercase">Transaction ID (Last 6 Digits)</label>
-            <input type="text" class="form-control" name="transaction_id" placeholder="e.g. 482910" maxlength="6" required>
-            <div class="form-text text-muted" style="font-size: 0.75rem;">Enter the last 6 digits of your JazzCash/EasyPaisa transaction receipt.</div>
-        </div>
-
-        <div class="form-check mb-4">
-            <input class="form-check-input" type="checkbox" id="terms" required style="border-color: #ff7700;">
-            <label class="form-check-label small text-muted" for="terms">
-                By submitting the payment, I agree not to initiate a fraudulent dispute or request a chargeback.
-            </label>
-        </div>
-
-        <button type="submit" class="btn btn-orange w-100 py-3 text-uppercase tracking-wider">
-            <i class="fas fa-lock me-2"></i> Pay Securely & Add Funds
-        </button>
-    </form>
-</div>
-
-<!-- How to Add Funds Section -->
-<div class="main-card mb-4" style="background: #ffffff;">
-    <div class="d-flex align-items-center gap-2 mb-4 pb-2 border-bottom">
-        <i class="fas fa-info-circle text-warning fs-5"></i>
-        <h5 class="fw-bold m-0 text-dark">How to Add Funds</h5>
-    </div>
-
-    <div class="row g-3">
-        <div class="col-md-6">
-            <div class="p-3 rounded-4 border border-light bg-light h-100" style="border-left: 4px solid #ff7700 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm"><i class="fas fa-wallet fa-lg"></i></div>
-                    <div>
-                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 1</span>
-                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Choose Payment Method</h6>
-                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Select JazzCash or EasyPaisa.</p>
-                    </div>
-                </div>
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0 p-4 rounded-3 mb-4">
+            <h5 class="fw-bold mb-3 text-dark"><i class="fas fa-wallet me-2" style="color: #ff6600;"></i>Add Funds via JazzCash / Easypaisa</h5>
+            <p class="text-muted small">Apni payment neechay diye gaye account par transfer karne ke baad Transaction ID (TID) yahan submit karein.</p>
+            
+            <div class="alert alert-warning border-0 shadow-sm mb-4" role="alert" style="background-color: #fff3cd; color: #856404;">
+                <h6 class="fw-bold mb-1"><i class="fas fa-info-circle me-1"></i> Payment Details:</h6>
+                <p class="mb-1"><strong>JazzCash / Easypaisa:</strong> 0300-1234567</p>
+                <p class="mb-0"><strong>Account Title:</strong> Arman Akhtar</p>
             </div>
-        </div>
 
-        <div class="col-md-6">
-            <div class="p-3 rounded-4 border border-light bg-light h-100" style="border-left: 4px solid #ff7700 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm"><i class="fas fa-money-bill-wave fa-lg"></i></div>
-                    <div>
-                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 2</span>
-                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Enter Amount & TID</h6>
-                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Type exact transferred amount and last 6 digits of TID.</p>
-                    </div>
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Payment Method</label>
+                    <select name="method" class="form-select" required>
+                        <option value="JazzCash">JazzCash</option>
+                        <option value="Easypaisa">Easypaisa</option>
+                        <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="p-3 rounded-4 border border-light bg-light h-100" style="border-left: 4px solid #ff7700 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm"><i class="fas fa-check-double fa-lg"></i></div>
-                    <div>
-                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 3</span>
-                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Double Check</h6>
-                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Verify transaction details carefully.</p>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Amount (PKR)</label>
+                    <input type="number" name="amount" class="form-control" placeholder="1000" min="50" required>
                 </div>
-            </div>
-        </div>
-
-        <div class="col-md-6">
-            <div class="p-3 rounded-4 border border-light bg-light h-100" style="border-left: 4px solid #ff7700 !important;">
-                <div class="d-flex align-items-center gap-3">
-                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm"><i class="fas fa-arrow-circle-right fa-lg"></i></div>
-                    <div>
-                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 4</span>
-                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Proceed Payment</h6>
-                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Click Pay Securely to credit balance instantly.</p>
-                    </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Transaction ID (TID) / Receipt No</label>
+                    <input type="text" name="tid" class="form-control" placeholder="Enter transaction ID..." required>
                 </div>
-            </div>
+                <button type="submit" class="btn btn-orange w-100 py-2 fw-bold text-white" style="background-color: #ff6600;">Submit Payment</button>
+            </form>
         </div>
-    </div>
-</div>
-
-<!-- Payment History Section -->
-<div class="main-card">
-    <div class="d-flex align-items-center gap-2 mb-3">
-        <i class="fas fa-history text-secondary"></i>
-        <h5 class="fw-bold m-0 text-dark">Payment History</h5>
-    </div>
-    <div class="table-responsive">
-        <table class="table table-hover align-middle">
-            <thead class="table-light fs-7">
-                <tr><th>ID</th><th>Gateway</th><th>Amount</th><th>TID (Last 6)</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-                {% if transactions %}
-                    {% for t in transactions %}
-                    <tr>
-                        <td><b>#{{ t.id }}</b></td>
-                        <td>{{ t.gateway }}</td>
-                        <td><b class="text-success">Rs. {{ "%.2f"|format(t.amount) }}</b></td>
-                        <td><code>{{ t.transaction_id }}</code></td>
-                        <td><span class="badge bg-success bg-opacity-10 text-success fw-bold px-2 py-1">{{ t.status }}</span></td>
-                    </tr>
-                    {% endfor %}
-                {% else %}
-                    <tr><td colspan="5" class="text-center text-muted py-5">Sorry, Nothing Found!</td></tr>
-                {% endif %}
-            </tbody>
-        </table>
     </div>
 </div>
 {% endblock %}
