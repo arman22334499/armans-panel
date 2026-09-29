@@ -14,8 +14,12 @@ def get_db_connection():
 def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
+    # Purani tables hata kar bilkul fresh aur complete tables bana rahe hain taake koi error na aaye
+    cursor.execute('DROP TABLE IF EXISTS orders')
+    cursor.execute('DROP TABLE IF EXISTS users')
+    
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
+        CREATE TABLE users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             email TEXT UNIQUE NOT NULL,
@@ -24,7 +28,7 @@ def init_db():
         )
     ''')
     cursor.execute('''
-        CREATE TABLE IF NOT EXISTS orders (
+        CREATE TABLE orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             service TEXT,
@@ -37,6 +41,7 @@ def init_db():
     conn.commit()
     conn.close()
 
+# Server start hone par database initialize ho jayega
 init_db()
 
 @app.route('/')
