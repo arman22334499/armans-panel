@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In - Arman's Panel</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e1e2f 0%, #11111d 100%);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            padding: 35px;
+            background: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-primary"><i class="fa-solid fa-crown text-warning"></i> Arman's Panel</h3>
+            <p class="text-muted small">Apne account mein Sign In karein</p>
+        </div>
+        
+        {% if error %}
+        <div class="alert alert-danger py-2 small text-center" role="alert">{{ error }}</div>
+        {% endif %}
+
+        <form action="/login" method="POST">
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Email Address</label>
+                <input type="email" class="form-control" name="email" placeholder="name@example.com" required>
+            </div>
+            <div class="mb-3">
+                <label class="form-label small fw-bold">Password</label>
+                <input type="password" class="file-control form-control" name="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2 mb-3 shadow-sm"><i class="fa-solid fa-right-to-bracket"></i> Sign In</button>
+        </form>
+
+        <div class="text-center mb-3">
+            <span class="text-muted small">ya phir</span>
+        </div>
+
+        <a href="/google_login" class="btn btn-outline-danger w-100 py-2 mb-3 shadow-sm">
+            <i class="fa-brands fa-google me-2"></i> Sign in with Google
+        </a>
+
+        <div class="text-center mt-3">
+            <small class="text-muted">Account nahi hai? <a href="/signup" class="text-decoration-none fw-bold">Sign Up karein</a></small>
+        </div>
+    </div>
+</body>
+</html>
