@@ -6,16 +6,40 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = 'arman_panel_secure_key_999'
 
-# Services with Rates in PKR
+# Professional SMM Panel Services List (All Categories)
 SERVICES_LIST = [
+    # Instagram
     {"id": 1, "name": "📸 Instagram Followers [HQ & Non-Drop]", "category": "Instagram", "rate": 450, "min": 10, "max": 50000},
-    {"id": 2, "name": "📸 Instagram Likes [Instant Delivery]", "category": "Instagram", "rate": 150, "min": 50, "max": 100000},
-    {"id": 3, "name": "📸 Instagram Views [Reels / Video]", "category": "Instagram", "rate": 50, "min": 100, "max": 1000000},
-    {"id": 4, "name": "🎵 TikTok Views [Super Fast]", "category": "TikTok", "rate": 30, "min": 100, "max": 5000000},
-    {"id": 5, "name": "🎵 TikTok Followers [Real Looking]", "category": "TikTok", "rate": 850, "min": 50, "max": 20000},
-    {"id": 6, "name": "📺 YouTube Subscribers [Lifetime Guarantee]", "category": "YouTube", "rate": 3500, "min": 50, "max": 5000},
-    {"id": 7, "name": "📺 YouTube Monetization Watchtime Hours", "category": "YouTube", "rate": 7000, "min": 500, "max": 4000},
-    {"id": 8, "name": "📘 Facebook Page Likes & Followers", "category": "Facebook", "rate": 1100, "min": 100, "max": 10000}
+    {"id": 2, "name": "📸 Instagram Followers [Refill Button Active]", "category": "Instagram", "rate": 650, "min": 50, "max": 25000},
+    {"id": 3, "name": "📸 Instagram Likes [Instant Delivery]", "category": "Instagram", "rate": 150, "min": 50, "max": 100000},
+    {"id": 4, "name": "📸 Instagram Views [Reels / Video]", "category": "Instagram", "rate": 50, "min": 100, "max": 1000000},
+    {"id": 5, "name": "📸 Instagram Comments [Custom / Emoji]", "category": "Instagram", "rate": 1200, "min": 10, "max": 5000},
+    {"id": 6, "name": "📸 Instagram Story Views", "category": "Instagram", "rate": 100, "min": 50, "max": 50000},
+
+    # TikTok
+    {"id": 7, "name": "🎵 TikTok Views [Super Fast]", "category": "TikTok", "rate": 30, "min": 100, "max": 5000000},
+    {"id": 8, "name": "🎵 TikTok Followers [Real Looking]", "category": "TikTok", "rate": 850, "min": 50, "max": 20000},
+    {"id": 9, "name": "🎵 TikTok Likes [High Quality]", "category": "TikTok", "rate": 350, "min": 50, "max": 50000},
+    {"id": 10, "name": "🎵 TikTok Shares & Saves", "category": "TikTok", "rate": 200, "min": 100, "max": 100000},
+
+    # YouTube
+    {"id": 11, "name": "📺 YouTube Subscribers [Lifetime Guarantee]", "category": "YouTube", "rate": 3500, "min": 50, "max": 5000},
+    {"id": 12, "name": "📺 YouTube Monetization Watchtime Hours", "category": "YouTube", "rate": 7000, "min": 500, "max": 4000},
+    {"id": 13, "name": "📺 YouTube Views [High Retention / Non-Drop]", "category": "YouTube", "rate": 1500, "min": 100, "max": 50000},
+    {"id": 14, "name": "📺 YouTube Likes [Fast Delivery]", "category": "YouTube", "rate": 500, "min": 20, "max": 10000},
+
+    # Facebook
+    {"id": 15, "name": "📘 Facebook Page Likes & Followers", "category": "Facebook", "rate": 1100, "min": 100, "max": 10000},
+    {"id": 16, "name": "📘 Facebook Post Likes / Reactions", "category": "Facebook", "rate": 400, "min": 50, "max": 20000},
+    {"id": 17, "name": "📘 Facebook Video Views [3 Sec / Throughplay]", "category": "Facebook", "rate": 250, "min": 100, "max": 100000},
+
+    # Telegram
+    {"id": 18, "name": "✈️ Telegram Channel Members [Real / Active]", "category": "Telegram", "rate": 900, "min": 50, "max": 15000},
+    {"id": 19, "name": "✈️ Telegram Post Views", "category": "Telegram", "rate": 50, "min": 100, "max": 100000},
+
+    # Twitter / X
+    {"id": 20, "name": "❌ Twitter/X Followers [HQ]", "category": "Twitter", "rate": 1200, "min": 50, "max": 10000},
+    {"id": 21, "name": "❌ Twitter/X Likes & Retweets", "category": "Twitter", "rate": 600, "min": 50, "max": 10000}
 ]
 
 def get_db_connection():
@@ -145,7 +169,6 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        # Case-insensitive search for both email and username
         cursor.execute("SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(username) = ?", (login_input, login_input))
         user = cursor.fetchone()
         conn.close()
@@ -553,7 +576,7 @@ def mass_order():
     <div class="card p-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-bolt me-2"></i> Mass Order</h4>
         <p class="text-muted">Har line mein aik order likhein is format mein: <code>service_id | link | quantity</code></p>
-        <textarea class="form-control mb-3" rows="6" placeholder="1 | https://instagram.com/p/abc | 1000&#10;4 | https://tiktok.com/@user/video/123 | 5000"></textarea>
+        <textarea class="form-control mb-3" rows="6" placeholder="1 | https://instagram.com/p/abc | 1000&#10;7 | https://tiktok.com/@user/video/123 | 5000"></textarea>
         <button class="btn btn-primary px-4 fw-bold">Submit Mass Orders</button>
     </div>
     '''
@@ -567,7 +590,7 @@ def support_tickets():
     <div class="card p-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-headset me-2"></i> Support Tickets</h4>
         <div class="mb-3">
-            <label class="form-label fw-bold">Subject / Maslaशै</label>
+            <label class="form-label fw-bold">Subject / Masla</label>
             <input type="text" class="form-control" placeholder="Misal ke tor par: Order refill request">
         </div>
         <div class="mb-3">
