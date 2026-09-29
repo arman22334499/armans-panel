@@ -39,7 +39,6 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Tables create hon gi agar pehle se mojood na hon (Data delete nahi hoga)
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -95,14 +94,12 @@ def init_db():
             )
         ''')
         
-        # Services check kar ke insert karein agar table khali ho
         cursor.execute("SELECT COUNT(*) FROM services")
         if cursor.fetchone()[0] == 0:
             for s in INITIAL_SERVICES:
                 cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                                (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
 
-        # Default Admin check karein agar mojood na ho
         cursor.execute("SELECT * FROM users WHERE username = 'admin'")
         if not cursor.fetchone():
             admin_pass = generate_password_hash('admin123')
@@ -152,7 +149,6 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        # Email ya username dono se login support kare ga
         cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
         user = cursor.fetchone()
         conn.close()
@@ -354,7 +350,7 @@ def admin_panel():
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute("SQLite3 INSERT OR IGNORE / INSERT INTO services (api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                cursor.execute("INSERT INTO services (api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                (int(api_service_id or 100), name, category, float(rate), 10, 10000, 'fas fa-star'))
                 conn.commit()
                 conn.close()
@@ -381,7 +377,7 @@ def admin_panel():
     return render_template('admin.html', user=user, all_users=all_users, all_orders=all_orders, all_transactions=all_transactions, services=services_list)
 
 @app.route('/logout')
-def logout() :
+def logout():
     session.clear()
     return redirect(url_for('login'))
 
