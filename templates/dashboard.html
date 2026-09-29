@@ -2,40 +2,106 @@
 {% block title %}New Order{% endblock %}
 {% set active_tab = 'dashboard' %}
 {% block content %}
-<div class="card p-4 p-md-5">
-    <h4 class="mb-4 text-dark fw-bold"><i class="fas fa-cart-plus text-primary me-2"></i> New Order</h4>
+
+<!-- 4 Stats Cards (Like Screenshot) -->
+<div class="row g-3 mb-4">
+    <div class="col-6">
+        <div class="card-stat">
+            <div class="icon-box"><i class="fas fa-user"></i></div>
+            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Welcome</small>
+            <h6 class="fw-bold mt-1 mb-0 text-dark">{{ user.username }}</h6>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card-stat">
+            <div class="icon-box"><i class="fas fa-wallet"></i></div>
+            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Balance</small>
+            <h6 class="fw-bold mt-1 mb-0 text-dark">PKR Rs. {{ "%.2f"|format(user.balance) }}</h6>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card-stat">
+            <div class="icon-box"><i class="fas fa-chart-line"></i></div>
+            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Total Spent</small>
+            <h6 class="fw-bold mt-1 mb-0 text-dark">PKR Rs. {{ "%.2f"|format(user.total_spent) }}</h6>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card-stat">
+            <div class="icon-box"><i class="fas fa-star"></i></div>
+            <small class="text-muted text-uppercase fw-bold" style="font-size: 0.7rem;">Account</small>
+            <h6 class="fw-bold mt-1 mb-0 text-dark">Member</h6>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Add Funds Button -->
+<div class="mb-4 text-center">
+    <a href="/addfunds" class="btn btn-orange w-100 py-3 fs-6 shadow-sm"><i class="fas fa-wallet me-2"></i> Quick Add Funds</a>
+</div>
+
+<!-- Place New Order Card -->
+<div class="main-card">
+    <h3 class="fw-bold text-center mb-1" style="color: #ff7700; font-size: 1.5rem;">PLACE NEW ORDER</h3>
+    <p class="text-center text-muted small mb-4">Boost your social presence instantly</p>
+
     <form method="POST">
+        <!-- Search filter input -->
         <div class="mb-3">
-            <label class="form-label fw-semibold">Service Category & Name</label>
+            <div class="input-group">
+                <span class="input-group-text bg-white border-end-0 rounded-start-4 ps-3"><i class="fas fa-search text-warning"></i></span>
+                <input type="text" id="searchService" class="form-control border-start-0 rounded-end-4" placeholder="Search for any service (e.g. TikTok, Instagram)..." onkeyup="filterServices()">
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold small text-secondary">CATEGORY & SERVICE</label>
             <select name="service_id" id="serviceSelect" class="form-select" onchange="calculateTotal()" required>
                 {% for s in services %}
-                <option value="{{ s.id }}" data-rate="{{ s.rate }}">[{{ s.category }}] {{ s.name }} - Rs. {{ s.rate }} per 1000</option>
+                <option value="{{ s.id }}" data-rate="{{ s.rate }}" data-min="{{ s.min }}" data-max="{{ s.max }}">[{{ s.category }}] {{ s.name }} - Rs. {{ s.rate }} {% if s.min > 1 %}per 1000{% else %}Fixed{% endif %}</option>
                 {% endfor %}
             </select>
         </div>
+
         <div class="mb-3">
-            <label class="form-label fw-semibold">Target Link</label>
-            <input type="url" name="link" class="form-control" placeholder="https://..." required>
+            <label class="form-label fw-bold small text-secondary">LINK</label>
+            <input type="url" name="link" class="form-control" placeholder="https://example.com" required>
         </div>
+
         <div class="mb-4">
-            <label class="form-label fw-semibold">Quantity</label>
-            <input type="number" name="quantity" id="quantityInput" class="form-control" value="1000" min="10" oninput="calculateTotal()" required>
+            <label class="form-label fw-bold small text-secondary">QUANTITY</label>
+            <input type="number" name="quantity" id="quantityInput" class="form-control" value="1000" min="1" oninput="calculateTotal()" required>
         </div>
-        <div class="mb-4 p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
-            <span class="text-muted fw-semibold">Total Charge:</span>
-            <span class="text-success fs-4 fw-bold" id="totalCost">Rs. 0.00</span>
+
+        <div class="mb-4 p-3 bg-light rounded-4 border d-flex justify-content-between align-items-center">
+            <span class="text-muted fw-bold"><i class="fas fa-wallet me-1 text-warning"></i> TOTAL CHARGE</span>
+            <span class="fs-4 fw-bold" style="color: #ff7700;" id="totalCost">0.000</span>
         </div>
-        <button type="submit" class="btn btn-primary w-100 py-3 fw-bold shadow-sm">Place Order</button>
+
+        <button type="submit" class="btn btn-orange w-100 py-3 shadow-sm">SUBMIT ORDER</button>
     </form>
 </div>
+
 <script>
     function calculateTotal() {
         var select = document.getElementById('serviceSelect');
         var qty = document.getElementById('quantityInput').value;
         var selectedOption = select.options[select.selectedIndex];
         var rate = parseFloat(selectedOption.getAttribute('data-rate')) || 0;
-        var total = (qty * rate) / 1000.0;
-        document.getElementById('totalCost').innerText = 'Rs. ' + total.toFixed(2);
+        var min = parseInt(selectedOption.getAttribute('data-min')) || 1;
+        
+        var total = min === 1 ? rate : (qty * rate) / 1000.0;
+        document.getElementById('totalCost').innerText = total.toFixed(3);
+    }
+
+    function filterServices() {
+        var input = document.getElementById('searchService').value.toLowerCase();
+        var select = document.getElementById('serviceSelect');
+        var options = select.options;
+        for (var i = 0; i < options.length; i++) {
+            var txt = options[i].text.toLowerCase();
+            options[i].style.display = txt.includes(input) ? "" : "none";
+        }
     }
     window.onload = calculateTotal;
 </script>
