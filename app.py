@@ -141,8 +141,8 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_input = request.form.get('email')
-        password = request.form.get('password')
+        login_input = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
 
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -203,14 +203,14 @@ def login():
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
-        username = request.form.get('username')
-        email = request.form.get('email')
-        password = request.form.get('password')
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
         
         if not username or not email or not password:
             flash('Tamam fields bharna lazmi hain!', 'danger')
         else:
-            hashed_password = generate_password_hash(password)
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
