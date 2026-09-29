@@ -2,10 +2,13 @@ import os
 from flask import Flask, render_template, request, redirect, url_for, flash, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 app = Flask(__name__)
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
+
 app.secret_key = 'arman_simple_smm_key_2026'
-app.permanent_session_lifetime = 3600  # Session 1 ghante tak active rahe ga
+app.permanent_session_lifetime = 3600
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -81,7 +84,9 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_input = request.form.get('email', '').strip()
+        # Dono email ya username ko support karega
+        login_input = request.form.get('email', '') or request.form.get('username', '')
+        login_input = login_input.strip()
         password = request.form.get('password', '')
 
         try:
@@ -92,7 +97,7 @@ def login():
             conn.close()
 
             if user and check_password_hash(user['password'], password):
-                session.clear()  # Purana session saaf karein
+                session.clear()
                 session['user_id'] = user['id']
                 session['username'] = user['username']
                 session['is_admin'] = user['is_admin']
