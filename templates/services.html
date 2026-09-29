@@ -1,1 +1,26 @@
-
+{% extends "base.html" %}
+{% block title %}Services{% endblock %}
+{% set active_tab = 'services' %}
+{% block content %}
+<div class="card p-3 p-md-4">
+    <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-list-ul me-2"></i> Available SMM Services</h4>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mt-2">
+            <thead class="table-light">
+                <tr><th>ID</th><th>Category</th><th>Service Name</th><th>Rate per 1000 (PKR)</th><th>Min / Max</th></tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td><b>{{ s.id }}</b></td>
+                    <td><span class="badge bg-secondary">{{ s.category }}</span></td>
+                    <td>{{ s.name }}</td>
+                    <td><b class="text-success">Rs. {{ s.rate }}</b></td>
+                    <td>{{ s.min }} / {{ s.max }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
