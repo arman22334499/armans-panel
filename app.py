@@ -10,7 +10,8 @@ app.secret_key = 'arman_smm_panel_secure_key_2026'
 SMM_API_URL = "https://supplier-smm-panel-url.com/api/v2" 
 SMM_API_KEY = "YOUR_SUPPLIER_API_KEY_HERE"
 
-SERVICES_LIST = [
+# Default Services List
+INITIAL_SERVICES = [
     {"id": 4317, "api_service_id": 101, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "🌐 Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1, "icon": "fas fa-globe"},
     {"id": 1, "api_service_id": 201, "name": "Instagram Followers [Low Drop] | Premium", "category": "📸 Instagram Followers", "rate": 450, "min": 10, "max": 20000, "icon": "fab fa-instagram"},
     {"id": 2, "api_service_id": 202, "name": "Instagram Followers [Real - Mix Data]", "category": "📸 Instagram Followers", "rate": 350, "min": 50, "max": 50000, "icon": "fab fa-instagram"},
@@ -42,6 +43,7 @@ def init_db():
         cursor.execute("DROP TABLE IF EXISTS orders")
         cursor.execute("DROP TABLE IF EXISTS tickets")
         cursor.execute("DROP TABLE IF EXISTS transactions")
+        cursor.execute("DROP TABLE IF EXISTS services")
         
         cursor.execute('''
             CREATE TABLE users (
@@ -85,7 +87,24 @@ def init_db():
                 status TEXT DEFAULT 'Completed'
             )
         ''')
+        cursor.execute('''
+            CREATE TABLE services (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                api_service_id INTEGER,
+                name TEXT NOT NULL,
+                category TEXT NOT NULL,
+                rate REAL NOT NULL,
+                min INTEGER DEFAULT 10,
+                max INTEGER DEFAULT 10000,
+                icon TEXT DEFAULT 'fas fa-star'
+            )
+        ''')
         
+        # Insert Initial Services into DB
+        for s in INITIAL_SERVICES:
+            cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                           (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
+
         # Create Default Admin User
         admin_pass = generate_password_hash('admin123')
         cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
@@ -97,6 +116,17 @@ def init_db():
         print("DB Init Error:", e)
 
 init_db()
+
+def get_all_services():
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute("SELECT * FROM services")
+        rows = cursor.fetchall()
+        conn.close()
+        return [dict(row) for row in rows]
+    except:
+        return INITIAL_SERVICES
 
 def get_user_data(user_id):
     try:
@@ -112,7 +142,7 @@ def get_user_data(user_id):
 @app.route('/')
 def index():
     if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('admin_panel' if session.get('is_admin') == 1 else 'dashboard'))
     return redirect(url_for('login'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -172,6 +202,8 @@ def dashboard():
         session.clear()
         return redirect(url_for('login'))
 
+    services_list = get_all_services()
+
     if request.method == 'POST':
         service_id = request.form.get('service_id')
         link = request.form.get('link')
@@ -180,7 +212,7 @@ def dashboard():
         if service_id and link and quantity_str:
             try:
                 quantity = int(quantity_str)
-                selected_service = next((s for s in SERVICES_LIST if s['id'] == int(service_id)), None)
+                selected_service = next((s for s in services_list if s['id'] == int(service_id)), None)
                 if selected_service:
                     total_price = (quantity * selected_service['rate']) / 1000.0 if selected_service['min'] > 1 else selected_service['rate']
                     
@@ -217,14 +249,14 @@ def dashboard():
                 flash(f'Error: {str(e)}', 'danger')
             return redirect(url_for('dashboard'))
 
-    return render_template('dashboard.html', services=SERVICES_LIST, user=user)
+    return render_template('dashboard.html', services=services_list, user=user)
 
 @app.route('/services')
 def services():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     user = get_user_data(session['user_id'])
-    return render_template('services.html', services=SERVICES_LIST, user=user)
+    return render_template('services.html', services=get_all_services(), user=user)
 
 @app.route('/orders')
 def orders():
@@ -307,12 +339,31 @@ def support_tickets():
     return render_template('support.html', tickets=tickets, user=user)
 
 # --- ADMIN PANEL ROUTE ---
-@app.route('/admin')
+@app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
     if 'user_id' not in session or session.get('is_admin') != 1:
         flash('Access denied! Admin login required.', 'danger')
         return redirect(url_for('login'))
     
+    if request.method == 'POST':
+        name = request.form.get('name')
+        category = request.form.get('category')
+        rate = request.form.get('rate')
+        api_service_id = request.form.get('api_service_id')
+        
+        if name and category and rate:
+            try:
+                conn = get_db_connection()
+                cursor = conn.cursor()
+                cursor.execute("INSERT INTO services (api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                               (int(api_service_id or 100), name, category, float(rate), 10, 10000, 'fas fa-star'))
+                conn.commit()
+                conn.close()
+                flash('Nayi service kamyabi se add ho gayi hai!', 'success')
+            except Exception as e:
+                flash(f'Error adding service: {str(e)}', 'danger')
+        return redirect(url_for('admin_panel'))
+
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
@@ -326,8 +377,9 @@ def admin_panel():
     except:
         all_users, all_orders, all_transactions = [], [], []
 
+    services_list = get_all_services()
     user = get_user_data(session['user_id'])
-    return render_template('admin.html', user=user, all_users=all_users, all_orders=all_orders, all_transactions=all_transactions)
+    return render_template('admin.html', user=user, all_users=all_users, all_orders=all_orders, all_transactions=all_transactions, services=services_list)
 
 @app.route('/logout')
 def logout():
