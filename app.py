@@ -10,7 +10,6 @@ app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 app.secret_key = 'arman_simple_smm_key_2026'
 app.permanent_session_lifetime = 3600
 
-# Absolute path for SQLite database to work perfectly on Railway
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.path.join(BASE_DIR, 'database.db')
 
@@ -24,7 +23,6 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        # Purani tables drop kar rahe hain taaki naye columns (jaise total_spent) conflict na karein
         cursor.execute('DROP TABLE IF EXISTS users')
         cursor.execute('DROP TABLE IF EXISTS orders')
         
@@ -72,7 +70,6 @@ def init_db():
             ]
             cursor.executemany("INSERT INTO services (name, category, rate) VALUES (?, ?, ?)", default_services)
 
-        # Fresh admin user insert kar rahe hain
         admin_pass = generate_password_hash('admin123')
         cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
                        ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
@@ -191,6 +188,13 @@ def dashboard():
     
     conn.close()
     return render_template('dashboard.html', user=user, services=services)
+
+@app.route('/add_funds', methods=['GET', 'POST'])
+def add_funds():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    flash('Funds adding feature jald araha hai!', 'info')
+    return redirect(url_for('dashboard'))
 
 @app.route('/orders')
 def orders():
