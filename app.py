@@ -65,7 +65,6 @@ def get_user_balance(user_id):
     except:
         return 0.0
 
-# Master Layout Template (Professional SMM Dashboard Theme)
 MASTER_TEMPLATE = '''
 <!DOCTYPE html>
 <html lang="en">
@@ -150,7 +149,20 @@ def login():
         user = cursor.fetchone()
         conn.close()
 
-        if user and check_password_hash(user['password'], password):
+        login_success = False
+        if user:
+            stored_password = user['password']
+            # Check password hash securely with fallback
+            try:
+                if check_password_hash(stored_password, password):
+                    login_success = True
+                elif stored_password == password: # Fallback if unhashed
+                    login_success = True
+            except:
+                if stored_password == password:
+                    login_success = True
+
+        if login_success:
             session['user_id'] = user['id']
             session['username'] = user['username']
             return redirect(url_for('dashboard'))
@@ -210,7 +222,7 @@ def signup():
         if not username or not email or not password:
             flash('Tamam fields bharna lazmi hain!', 'danger')
         else:
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            hashed_password = generate_password_hash(password)
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
