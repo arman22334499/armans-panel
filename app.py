@@ -7,12 +7,33 @@ app = Flask(__name__)
 app.secret_key = 'arman_smm_panel_secure_key_2026'
 
 SERVICES_LIST = [
-    {"id": 4317, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1},
-    {"id": 1, "name": "Instagram Followers [Low Drop] | Premium", "category": "Instagram Followers", "rate": 450, "min": 10, "max": 20000},
-    {"id": 2, "name": "Instagram Followers [Real - Mix Data]", "category": "Instagram Followers", "rate": 350, "min": 50, "max": 50000},
-    {"id": 3, "name": "TikTok Views [Super Fast]", "category": "TikTok", "rate": 30, "min": 100, "max": 5000000},
-    {"id": 4, "name": "TikTok Followers [Real Looking]", "category": "TikTok", "rate": 850, "min": 50, "max": 20000},
-    {"id": 5, "name": "YouTube Subscribers [Lifetime Guarantee]", "category": "YouTube", "rate": 3500, "min": 50, "max": 5000}
+    # Hostinger
+    {"id": 4317, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "🌐 Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1, "icon": "fas fa-globe"},
+    
+    # Instagram Services
+    {"id": 1, "name": "Instagram Followers [Low Drop] | Premium", "category": "📸 Instagram Followers", "rate": 450, "min": 10, "max": 20000, "icon": "fab fa-instagram"},
+    {"id": 2, "name": "Instagram Followers [Real - Mix Data]", "category": "📸 Instagram Followers", "rate": 350, "min": 50, "max": 50000, "icon": "fab fa-instagram"},
+    {"id": 3, "name": "Instagram Story Views [Instant]", "category": "📸 Instagram Story Views", "rate": 120, "min": 100, "max": 100000, "icon": "fas fa-eye"},
+    {"id": 4, "name": "Instagram Poll Reactions [Real Votes]", "category": "📸 Instagram Poll Reactions", "rate": 200, "min": 50, "max": 10000, "icon": "fas fa-poll"},
+    {"id": 5, "name": "Instagram Likes [Super Fast]", "category": "📸 Instagram Likes", "rate": 150, "min": 50, "max": 50000, "icon": "fas fa-heart"},
+
+    # TikTok Services
+    {"id": 6, "name": "TikTok Views [Super Fast & Cheap]", "category": "🎵 TikTok Views", "rate": 30, "min": 100, "max": 5000000, "icon": "fab fa-tiktok"},
+    {"id": 7, "name": "TikTok Followers [Real Looking]", "category": "🎵 TikTok Followers", "rate": 850, "min": 50, "max": 20000, "icon": "fab fa-tiktok"},
+    {"id": 8, "name": "TikTok Video Likes [High Quality]", "category": "🎵 TikTok Video Likes", "rate": 250, "min": 50, "max": 50000, "icon": "fab fa-tiktok"},
+    {"id": 9, "name": "TikTok Page / Profile Likes", "category": "🎵 TikTok Page Likes", "rate": 300, "min": 50, "max": 30000, "icon": "fab fa-tiktok"},
+
+    # YouTube Services
+    {"id": 10, "name": "YouTube Subscribers [Lifetime Guarantee]", "category": "▶️ YouTube Subscribers", "rate": 3500, "min": 50, "max": 5000, "icon": "fab fa-youtube"},
+    {"id": 11, "name": "YouTube Watchtime Hours [Monetization]", "category": "▶️ YouTube Watchtime", "rate": 7000, "min": 500, "max": 4000, "icon": "fas fa-clock"},
+    {"id": 12, "name": "YouTube Video Likes [Instant]", "category": "▶️ YouTube Likes", "rate": 400, "min": 50, "max": 10000, "icon": "fas fa-thumbs-up"},
+
+    # Facebook Services
+    {"id": 13, "name": "Facebook Page Followers & Likes", "category": "📘 Facebook Page Followers", "rate": 1100, "min": 100, "max": 10000, "icon": "fab fa-facebook"},
+    {"id": 14, "name": "Facebook Video Views [HQ]", "category": "📘 Facebook Video Views", "rate": 200, "min": 100, "max": 100000, "icon": "fas fa-video"},
+
+    # WhatsApp Services
+    {"id": 15, "name": "WhatsApp Channel Followers", "category": "💚 WhatsApp Channel Followers", "rate": 1500, "min": 100, "max": 25000, "icon": "fab fa-whatsapp"}
 ]
 
 def get_db_connection():
@@ -24,7 +45,6 @@ def init_db():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        # Purane tables hata kar naye columns ke sath fresh banane ke liye
         cursor.execute("DROP TABLE IF EXISTS users")
         cursor.execute("DROP TABLE IF EXISTS orders")
         cursor.execute("DROP TABLE IF EXISTS tickets")
