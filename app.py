@@ -7,14 +7,12 @@ app = Flask(__name__)
 app.secret_key = 'arman_smm_panel_secure_key_2026'
 
 SERVICES_LIST = [
-    {"id": 1, "name": "Instagram Followers [HQ & Non-Drop]", "category": "Instagram", "rate": 450, "min": 10, "max": 50000},
-    {"id": 2, "name": "Instagram Likes [Instant Delivery]", "category": "Instagram", "rate": 150, "min": 50, "max": 100000},
+    {"id": 4317, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1},
+    {"id": 1, "name": "Instagram Followers [Low Drop] | Premium", "category": "Instagram Followers", "rate": 450, "min": 10, "max": 20000},
+    {"id": 2, "name": "Instagram Followers [Real - Mix Data]", "category": "Instagram Followers", "rate": 350, "min": 50, "max": 50000},
     {"id": 3, "name": "TikTok Views [Super Fast]", "category": "TikTok", "rate": 30, "min": 100, "max": 5000000},
     {"id": 4, "name": "TikTok Followers [Real Looking]", "category": "TikTok", "rate": 850, "min": 50, "max": 20000},
-    {"id": 5, "name": "YouTube Subscribers [Lifetime Guarantee]", "category": "YouTube", "rate": 3500, "min": 50, "max": 5000},
-    {"id": 6, "name": "YouTube Watchtime Hours", "category": "YouTube", "rate": 7000, "min": 500, "max": 4000},
-    {"id": 7, "name": "Facebook Page Likes & Followers", "category": "Facebook", "rate": 1100, "min": 100, "max": 10000},
-    {"id": 8, "name": "Telegram Channel Members", "category": "Telegram", "rate": 900, "min": 50, "max": 15000}
+    {"id": 5, "name": "YouTube Subscribers [Lifetime Guarantee]", "category": "YouTube", "rate": 3500, "min": 50, "max": 5000}
 ]
 
 def get_db_connection():
@@ -32,7 +30,8 @@ def init_db():
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
                 password TEXT NOT NULL,
-                balance REAL DEFAULT 0.00
+                balance REAL DEFAULT 162.95,
+                total_spent REAL DEFAULT 52.05
             )
         ''')
         cursor.execute('''
@@ -43,7 +42,7 @@ def init_db():
                 link TEXT,
                 quantity INTEGER,
                 price REAL,
-                status TEXT DEFAULT 'In Progress'
+                status TEXT DEFAULT 'Pending'
             )
         ''')
         cursor.execute('''
@@ -62,16 +61,16 @@ def init_db():
 
 init_db()
 
-def get_user_balance(user_id):
+def get_user_data(user_id):
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT balance FROM users WHERE id = ?", (user_id,))
+        cursor.execute("SELECT * FROM users WHERE id = ?", (user_id,))
         row = cursor.fetchone()
         conn.close()
-        return row['balance'] if row else 0.0
+        return row
     except:
-        return 0.0
+        return None
 
 @app.route('/')
 def index():
@@ -113,11 +112,11 @@ def signup():
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute("INSERT INTO users (username, email, password, balance) VALUES (?, ?, ?, ?)", 
-                               (username, email, hashed_password, 0.00))
+                cursor.execute("INSERT INTO users (username, email, password, balance, total_spent) VALUES (?, ?, ?, ?, ?)", 
+                               (username, email, hashed_password, 162.95, 52.05))
                 conn.commit()
                 conn.close()
-                flash('Account kamyaabi se ban gaya! Ab login karein.', 'success')
+                flash('Account ban gaya! Ab login karein.', 'success')
                 return redirect(url_for('login'))
             except sqlite3.IntegrityError:
                 flash('Yeh Email ya Username pehle se mojood hai!', 'danger')
@@ -128,6 +127,8 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
+    user = get_user_data(session['user_id'])
+
     if request.method == 'POST':
         service_id = request.form.get('service_id')
         link = request.form.get('link')
@@ -138,33 +139,31 @@ def dashboard():
                 quantity = int(quantity_str)
                 selected_service = next((s for s in SERVICES_LIST if s['id'] == int(service_id)), None)
                 if selected_service:
-                    total_price = (quantity * selected_service['rate']) / 1000.0
-                    current_balance = get_user_balance(session['user_id'])
+                    total_price = (quantity * selected_service['rate']) / 1000.0 if selected_service['min'] > 1 else selected_service['rate']
                     
-                    if current_balance >= total_price:
+                    if user['balance'] >= total_price:
                         conn = get_db_connection()
                         cursor = conn.cursor()
-                        cursor.execute("UPDATE users SET balance = balance - ? WHERE id = ?", (total_price, session['user_id']))
+                        cursor.execute("UPDATE users SET balance = balance - ?, total_spent = total_spent + ? WHERE id = ?", (total_price, total_price, session['user_id']))
                         cursor.execute("INSERT INTO orders (user_id, service, link, quantity, price, status) VALUES (?, ?, ?, ?, ?, ?)",
-                                       (session['user_id'], selected_service['name'], link, quantity, total_price, 'In Progress'))
+                                       (session['user_id'], f"[{selected_service['id']}] {selected_service['name']}", link, quantity, total_price, 'Pending'))
                         conn.commit()
                         conn.close()
-                        flash(f'Order kamyaabi se place ho gaya! Total: Rs. {total_price:.2f}', 'success')
+                        flash(f'Order place ho gaya! Total: PKR Rs. {total_price:.2f}', 'success')
                     else:
-                        flash('Aapke account mein balance kam hai! Pehle Add Funds karein.', 'danger')
+                        flash('Aapke account mein balance kam hai!', 'danger')
             except Exception as e:
                 flash(f'Error: {str(e)}', 'danger')
             return redirect(url_for('dashboard'))
 
-    balance = get_user_balance(session['user_id'])
-    return render_template('dashboard.html', services=SERVICES_LIST, balance=balance, username=session.get('username'))
+    return render_template('dashboard.html', services=SERVICES_LIST, user=user)
 
 @app.route('/services')
 def services():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    balance = get_user_balance(session['user_id'])
-    return render_template('services.html', services=SERVICES_LIST, balance=balance, username=session.get('username'))
+    user = get_user_data(session['user_id'])
+    return render_template('services.html', services=SERVICES_LIST, user=user)
 
 @app.route('/orders')
 def orders():
@@ -178,15 +177,15 @@ def orders():
         conn.close()
     except:
         orders_list = []
-    balance = get_user_balance(session['user_id'])
-    return render_template('orders.html', orders=orders_list, balance=balance, username=session.get('username'))
+    user = get_user_data(session['user_id'])
+    return render_template('orders.html', orders=orders_list, user=user)
 
 @app.route('/addfunds')
 def add_funds():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    balance = get_user_balance(session['user_id'])
-    return render_template('add_funds.html', balance=balance, username=session.get('username'))
+    user = get_user_data(session['user_id'])
+    return render_template('add_funds.html', user=user)
 
 @app.route('/support-tickets', methods=['GET', 'POST'])
 def support_tickets():
@@ -202,7 +201,7 @@ def support_tickets():
                            (session['user_id'], subject, message, 'Open'))
             conn.commit()
             conn.close()
-            flash('Support ticket submit ho gayi!', 'success')
+            flash('Ticket submit ho gayi!', 'success')
         return redirect(url_for('support_tickets'))
     
     try:
@@ -213,8 +212,8 @@ def support_tickets():
         conn.close()
     except:
         tickets = []
-    balance = get_user_balance(session['user_id'])
-    return render_template('support.html', tickets=tickets, balance=balance, username=session.get('username'))
+    user = get_user_data(session['user_id'])
+    return render_template('support.html', tickets=tickets, user=user)
 
 @app.route('/logout')
 def logout():
