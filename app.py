@@ -24,8 +24,13 @@ def init_db():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
+        # Purane tables hata kar naye columns ke sath fresh banane ke liye
+        cursor.execute("DROP TABLE IF EXISTS users")
+        cursor.execute("DROP TABLE IF EXISTS orders")
+        cursor.execute("DROP TABLE IF EXISTS tickets")
+        
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -35,7 +40,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS orders (
+            CREATE TABLE orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 service TEXT,
@@ -46,7 +51,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS tickets (
+            CREATE TABLE tickets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 subject TEXT,
@@ -128,6 +133,9 @@ def dashboard():
         return redirect(url_for('login'))
     
     user = get_user_data(session['user_id'])
+    if not user:
+        session.clear()
+        return redirect(url_for('login'))
 
     if request.method == 'POST':
         service_id = request.form.get('service_id')
