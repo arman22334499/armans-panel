@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash, session
+from flask import Flask, render_template_string, request, redirect, url_for, flash, session
 import sqlite3
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -42,6 +42,29 @@ def init_db():
 
 init_db()
 
+# Shared CSS Layout for all pages to look professional
+BASE_LAYOUT = '''
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arman's Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .sidebar { background: #212529; min-height: 100vh; color: white; padding: 20px; }
+        .sidebar a { color: #cfd4da; text-decoration: none; display: block; padding: 10px 15px; border-radius: 5px; margin-bottom: 5px; }
+        .sidebar a:hover, .sidebar a.active { background: #0d6efd; color: white; }
+        .card { border: none; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+    </style>
+</head>
+<body>
+    {% block content %}{% endblock %}
+</body>
+</html>
+'''
+
 @app.route('/')
 def index():
     if 'user_id' in session:
@@ -65,9 +88,37 @@ def login():
             session['username'] = user['username']
             return redirect(url_for('dashboard'))
         else:
-            flash('Ghalat Email/Username ya Password! Dubara koshish karein.', 'danger')
+            flash('Ghalat Email/Username ya Password!', 'danger')
             
-    return render_template('login.html')
+    html = BASE_LAYOUT.replace('{% block content %}{% endblock %}', '''
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4" style="width: 400px;">
+            <h3 class="text-center mb-3">👑 Arman's Panel</h3>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Email ya Username</label>
+                    <input type="text" name="email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Sign In</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="/signup">Account nahi hai? Sign Up karein</a>
+            </div>
+        </div>
+    </div>
+    ''')
+    return render_template_string(html)
 
 @app.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -94,7 +145,65 @@ def signup():
         except sqlite3.IntegrityError:
             flash('Yeh Email ya Username pehle se mojood hai!', 'danger')
 
-    return render_template('signup.html')
+    html = BASE_LAYOUT.replace('{% block content %}{% endblock %}', '''
+    <div class="container d-flex justify-content-center align-items-center vh-100">
+        <div class="card p-4" style="width: 400px;">
+            <h3 class="text-center mb-3">📝 Create Account</h3>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            <form method="POST">
+                <div class="mb-3">
+                    <label>Username</label>
+                    <input type="text" name="username" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Email Address</label>
+                    <input type="email" name="email" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label>Password</label>
+                    <input type="password" name="password" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success w-100">Sign Up</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="/login">Pehle se account hai? Login karein</a>
+            </div>
+        </div>
+    </div>
+    ''')
+    return render_template_string(html)
+
+def dashboard_layout(active_page, content):
+    return BASE_LAYOUT.replace('{% block content %}{% endblock %}', f'''
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-md-3 sidebar">
+                <h4 class="text-white mb-4">👑 Arman's Panel</h4>
+                <a href="/dashboard" class="{'active' if active_page=='new_order' else ''}">➕ New Order</a>
+                <a href="/services" class="{'active' if active_page=='services' else ''}">📋 Services</a>
+                <a href="/orders" class="{'active' if active_page=='orders' else ''}">📦 Orders</a>
+                <a href="/add-funds" class="{'active' if active_page=='add_funds' else ''}">💳 Add Funds</a>
+                <a href="/mass-order" class="{'active' if active_page=='mass_order' else ''}">⚡ Mass Order</a>
+                <a href="/support-tickets" class="{'active' if active_page=='support' else ''}">🎫 Support</a>
+                <hr class="text-secondary">
+                <a href="/logout" class="text-danger">🚪 Logout</a>
+            </div>
+            <div class="col-md-9 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+                    <h5>Welcome, <b>{session.get('username')}</b></h5>
+                    <span class="badge bg-success fs-6">Balance: ${{ "{:.2f}".format(balance if 'balance' in locals() else 0.0) }}</span>
+                </div>
+                {content}
+            </div>
+        </div>
+    </div>
+    ''')
 
 @app.route('/dashboard', methods=['GET', 'POST'])
 def dashboard():
@@ -103,7 +212,6 @@ def dashboard():
     
     conn = get_db_connection()
     cursor = conn.cursor()
-    
     cursor.execute("SELECT balance FROM users WHERE id = ?", (session['user_id'],))
     user_data = cursor.fetchone()
     balance = user_data['balance'] if user_data else 0.0
@@ -114,27 +222,57 @@ def dashboard():
         quantity = request.form.get('quantity')
         if service and link and quantity:
             cursor.execute("INSERT INTO orders (user_id, service, link, quantity, price) VALUES (?, ?, ?, ?, ?)",
-                           (session['user_id'], service, link, int(quantity), 0.0))
+                           (session['user_id'], service, link, int(quantity), 0.50))
             conn.commit()
             flash('Order kamyaabi se place ho gaya!', 'success')
-    
-    cursor.execute("SELECT id, service, quantity, status FROM orders WHERE user_id = ?", (session['user_id'],))
-    orders = cursor.fetchall()
+            return redirect(url_for('dashboard'))
+            
     conn.close()
     
-    return render_template('dashboard.html', username=session.get('username'), balance=balance, orders=orders)
-
-@app.route('/add-funds')
-def add_funds():
-    if 'user_id' not in session:
-        return redirect(url_for('login'))
-    return render_template('add_funds.html', username=session.get('username'))
+    content = '''
+    <div class="card p-4">
+        <h4>New Order</h4>
+        <form method="POST">
+            <div class="mb-3">
+                <label>Service Category</label>
+                <select name="service" class="form-control">
+                    <option value="Instagram Followers">Instagram Followers (HQ)</option>
+                    <option value="TikTok Views">TikTok Views (Fast)</option>
+                    <option value="YouTube Subscribers">YouTube Subscribers</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label>Link</label>
+                <input type="url" name="link" class="form-control" placeholder="https://..." required>
+            </div>
+            <div class="mb-3">
+                <label>Quantity</label>
+                <input type="number" name="quantity" class="form-control" value="1000" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Place Order</button>
+        </form>
+    </div>
+    '''
+    return dashboard_layout('new_order', content)
 
 @app.route('/services')
 def services():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('services.html', username=session.get('username'))
+    content = '''
+    <div class="card p-4">
+        <h4>Available Services</h4>
+        <table class="table table-striped mt-3">
+            <thead><tr><th>ID</th><th>Service Name</th><th>Rate per 1000</th></tr></thead>
+            <tbody>
+                <tr><td>1</td><td>Instagram Followers (HQ)</td><td>$1.50</td></tr>
+                <tr><td>2</td><td>TikTok Views (Fast)</td><td>$0.20</td></tr>
+                <tr><td>3</td><td>YouTube Subscribers</td><td>$5.00</td></tr>
+            </tbody>
+        </table>
+    </div>
+    '''
+    return dashboard_layout('services', content)
 
 @app.route('/orders')
 def orders():
@@ -143,21 +281,62 @@ def orders():
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, service, link, quantity, price, status FROM orders WHERE user_id = ?", (session['user_id'],))
-    orders = cursor.fetchall()
+    orders_list = cursor.fetchall()
     conn.close()
-    return render_template('orders.html', username=session.get('username'), orders=orders)
+    
+    rows = ""
+    for o in orders_list:
+        rows += f"<tr><td>{o['id']}</td><td>{o['service']}</td><td>{o['link']}</td><td>{o['quantity']}</td><td><span class='badge bg-warning'>{o['status']}</span></td></tr>"
+    
+    content = f'''
+    <div class="card p-4">
+        <h4>Order History</h4>
+        <table class="table mt-3">
+            <thead><tr><th>ID</th><th>Service</th><th>Link</th><th>Qty</th><th>Status</th></tr></thead>
+            <tbody>{rows if rows else "<tr><td colspan='5' class='text-center'>Koi order nahi hai</td></tr>"}</tbody>
+        </table>
+    </div>
+    '''
+    return dashboard_layout('orders', content)
+
+@app.route('/add-funds')
+def add_funds():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    content = '''
+    <div class="card p-4">
+        <h4>Add Funds</h4>
+        <p class="text-muted">Apne account mein funds add karne ke liye admin se rabta karein.</p>
+        <div class="alert alert-info">WhatsApp Support: +92 3XXXXXXXXX</div>
+    </div>
+    '''
+    return dashboard_layout('add_funds', content)
 
 @app.route('/mass-order')
 def mass_order():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('mass_order.html', username=session.get('username'))
+    content = '''
+    <div class="card p-4">
+        <h4>Mass Order</h4>
+        <textarea class="form-control mb-3" rows="5" placeholder="service_id | link | quantity"></textarea>
+        <button class="btn btn-primary">Submit Mass Order</button>
+    </div>
+    '''
+    return dashboard_layout('mass_order', content)
 
 @app.route('/support-tickets')
 def support_tickets():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    return render_template('support.html', username=session.get('username'))
+    content = '''
+    <div class="card p-4">
+        <h4>Support Tickets</h4>
+        <textarea class="form-control mb-3" rows="3" placeholder="Apna masla yahan likhein..."></textarea>
+        <button class="btn btn-success">Send Ticket</button>
+    </div>
+    '''
+    return dashboard_layout('support', content)
 
 @app.route('/logout')
 def logout():
