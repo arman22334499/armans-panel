@@ -1,19 +1,129 @@
 {% extends "base.html" %}
-{% block title %}Add Funds{% endblock %}
 {% set active_tab = 'addfunds' %}
+{% block title %}Add Funds{% endblock %}
+
 {% block content %}
-<div class="main-card">
-    <h4 class="fw-bold mb-3" style="color: #ff7700;">Add Funds</h4>
-    <p class="text-muted small">Nechay diye gaye numbers par raqam transfer karein:</p>
-    <div class="row g-3 mb-4">
-        <div class="col-12">
-            <div class="p-3 bg-light rounded-4 border">
-                <h6 class="fw-bold text-success">Easypaisa / NayaPay / SadaPay</h6>
-                <p class="mb-1 small">Title: <b>Arman Akhtar</b></p>
-                <p class="mb-0 small">Number: <b class="fs-6 text-dark">03281583582</b></p>
+<div class="main-card mb-4" style="background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border: 1px solid #ffedd5;">
+    <div class="d-flex align-items-center gap-3 mb-4">
+        <div class="rounded-circle p-3 text-white" style="background: linear-gradient(135deg, #ff7700, #ff5500); box-shadow: 0 4px 15px rgba(255,119,0,0.3);">
+            <i class="fas fa-wallet fa-lg"></i>
+        </div>
+        <div>
+            <h4 class="fw-bold mb-1" style="color: #1e293b;">Add Funds to Balance</h4>
+            <p class="text-muted small mb-0">Top up your Arman SMM Panel account instantly</p>
+        </div>
+    </div>
+
+    <!-- Payment Form -->
+    <form method="POST" class="mb-4">
+        <div class="mb-3">
+            <label class="form-label fw-bold text-secondary small text-uppercase">Choose Payment Method</label>
+            <select class="form-select" name="gateway" required>
+                <option value="jazzcash">JazzCash / EasyPaisa (Pakistan)</option>
+                <option value="binance">Binance Pay / USDT</option>
+                <option value="paytm">PayTM</option>
+                <option value="skrill">Skrill</option>
+            </select>
+        </div>
+        <div class="mb-4">
+            <label class="form-label fw-bold text-secondary small text-uppercase">Enter Amount (PKR / USD)</label>
+            <input type="number" class="form-control" name="amount" placeholder="e.g. 1000" required>
+        </div>
+        <div class="form-check mb-4">
+            <input class="form-check-input" type="checkbox" id="terms" required style="border-color: #ff7700;">
+            <label class="form-check-label small text-muted" for="terms">
+                By submitting the payment, I agree not to initiate a fraudulent dispute or request a chargeback.
+            </label>
+        </div>
+        <button type="submit" class="btn btn-orange w-100 py-3 text-uppercase tracking-wider">
+            <i class="fas fa-lock me-2"></i> Pay Securely
+        </button>
+    </form>
+</div>
+
+<!-- How to Add Funds Section (Aesthetic Steps Cards) -->
+<div class="main-card mb-4" style="background: #ffffff;">
+    <div class="d-flex align-items-center gap-2 mb-4 pb-2 border-bottom">
+        <i class="fas fa-info-circle text-warning fs-5"></i>
+        <h5 class="fw-bold m-0 text-dark">How to Add Funds</h5>
+    </div>
+
+    <div class="row g-3">
+        <!-- Step 1 -->
+        <div class="col-md-6">
+            <div class="p-3 rounded-4 border border-light bg-light h-100 position-relative overflow-hidden" style="border-left: 4px solid #ff7700 !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm">
+                        <i class="fas fa-wallet fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 1</span>
+                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Choose Payment Method</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Select your preferred payment gateway from the list.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 2 -->
+        <div class="col-md-6">
+            <div class="p-3 rounded-4 border border-light bg-light h-100 position-relative overflow-hidden" style="border-left: 4px solid #ff7700 !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm">
+                        <i class="fas fa-money-bill-wave fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 2</span>
+                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Enter Your Amount</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Type the exact amount you want to add to balance.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3 -->
+        <div class="col-md-6">
+            <div class="p-3 rounded-4 border border-light bg-light h-100 position-relative overflow-hidden" style="border-left: 4px solid #ff7700 !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm">
+                        <i class="fas fa-check-double fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 3</span>
+                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Double Check Before Proceed</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Verify all details carefully to avoid any errors.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4 -->
+        <div class="col-md-6">
+            <div class="p-3 rounded-4 border border-light bg-light h-100 position-relative overflow-hidden" style="border-left: 4px solid #ff7700 !important;">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="rounded-3 p-3 bg-white text-warning shadow-sm">
+                        <i class="fas fa-arrow-circle-right fa-lg"></i>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark mb-1 fw-bold" style="font-size: 0.65rem;">STEP 4</span>
+                        <h6 class="fw-bold mb-1 text-dark" style="font-size: 0.95rem;">Proceed with the Payment</h6>
+                        <p class="text-muted small mb-0" style="font-size: 0.8rem;">Click the Pay button to complete the transaction.</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
-    <a href="https://wa.me/923281583582" target="_blank" class="btn btn-success w-100 py-3 fw-bold rounded-3"><i class="fab fa-whatsapp me-2"></i> Send Screenshot on WhatsApp</a>
+</div>
+
+<!-- Payment History Section -->
+<div class="main-card">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <i class="fas fa-history text-secondary"></i>
+        <h5 class="fw-bold m-0 text-dark">Payment History</h5>
+    </div>
+    <div class="text-center py-5 text-muted bg-light rounded-4 border border-dashed">
+        <i class="fas fa-folder-open fs-2 mb-2 opacity-50"></i>
+        <p class="mb-0 fw-medium">Sorry, Nothing Found!</p>
+    </div>
 </div>
 {% endblock %}
