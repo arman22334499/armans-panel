@@ -7,7 +7,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 app = Flask(__name__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_prefix=1)
 
-app.secret_key = 'arman_simple_smm_key_2026'
+app.secret_key = 'mana_smm_key_2026'
 app.permanent_session_lifetime = 3600
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -23,11 +23,8 @@ def init_db():
         conn = get_db_connection()
         cursor = conn.cursor()
         
-        cursor.execute('DROP TABLE IF EXISTS users')
-        cursor.execute('DROP TABLE IF EXISTS orders')
-        
         cursor.execute('''
-            CREATE TABLE users (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -39,7 +36,7 @@ def init_db():
         ''')
         
         cursor.execute('''
-            CREATE TABLE orders (
+            CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 service TEXT,
@@ -58,6 +55,16 @@ def init_db():
                 rate REAL NOT NULL
             )
         ''')
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS tickets (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id INTEGER,
+                subject TEXT,
+                message TEXT,
+                status TEXT DEFAULT 'Open'
+            )
+        ''')
         
         cursor.execute("SELECT COUNT(*) FROM services")
         if cursor.fetchone()[0] == 0:
@@ -70,13 +77,14 @@ def init_db():
             ]
             cursor.executemany("INSERT INTO services (name, category, rate) VALUES (?, ?, ?)", default_services)
 
-        admin_pass = generate_password_hash('admin123')
-        cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
-                       ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
+        cursor.execute("SELECT COUNT(*) FROM users WHERE username = 'admin'")
+        if cursor.fetchone()[0] == 0:
+            admin_pass = generate_password_hash('admin123')
+            cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
+                           ('admin', 'admin@manasmm.com', admin_pass, 5000.0, 0.0, 1))
         
         conn.commit()
         conn.close()
-        print("Database re-initialized successfully at:", DB_PATH)
     except Exception as e:
         print("CRITICAL DB Error:", e)
 
@@ -196,15 +204,49 @@ def dashboard():
 def add_funds():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    flash('Funds adding feature jald araha hai!', 'info')
-    return redirect(url_for('dashboard'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+    conn.close()
+    
+    if request.method == 'POST':
+        amount = request.form.get('amount')
+        tid = request.form.get('tid')
+        method = request.form.get('method')
+        flash(f'Payment request of PKR {amount} via {method} submitted successfully! TID: {tid}', 'success')
+        return redirect(url_for('add_funds'))
+    return render_template('add_funds.html', user=user)
 
 @app.route('/support_tickets', methods=['GET', 'POST'])
 def support_tickets():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    flash('Support tickets feature jald araha hai!', 'info')
-    return redirect(url_for('dashboard'))
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM users WHERE id = ?", (session['user_id'],))
+    user = cursor.fetchone()
+    
+    cursor.execute("SELECT * FROM tickets WHERE user_id = ? ORDER BY id DESC", (session['user_id'],))
+    tickets = cursor.fetchall()
+    conn.close()
+    
+    if request.method == 'POST':
+        subject = request.form.get('subject')
+        message = request.form.get('message')
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("INSERT INTO tickets (user_id, subject, message, status) VALUES (?, ?, ?, ?)", 
+                           (session['user_id'], subject, message, 'Open'))
+            conn.commit()
+            conn.close()
+            flash('Support ticket successfully create ho gaya!', 'success')
+        except Exception as e:
+            flash(f'Error: {str(e)}', 'danger')
+        return redirect(url_for('support_tickets'))
+        
+    return render_template('support.html', user=user, tickets=tickets)
 
 @app.route('/orders')
 def orders():
