@@ -6,9 +6,13 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = 'arman_panel_secret_key_123'
 
-# Database initialization function
-def init_db():
+def get_db_connection():
     conn = sqlite3.connect('database.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS users (
@@ -47,15 +51,15 @@ def login():
         login_input = request.form.get('email')
         password = request.form.get('password')
 
-        conn = sqlite3.connect('database.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
         cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
         user = cursor.fetchone()
         conn.close()
 
-        if user and check_password_hash(user[3], password):
-            session['user_id'] = user[0]
-            session['username'] = user[1]
+        if user and check_password_hash(user['password'], password):
+            session['user_id'] = user['id']
+            session['username'] = user['username']
             return redirect(url_for('dashboard'))
         else:
             flash('Ghalat Email/Username ya Password! Dubara koshish karein.', 'danger')
@@ -69,10 +73,14 @@ def signup():
         email = request.form.get('email')
         password = request.form.get('password')
         
+        if not username or not email or not password:
+            flash('Tamam fields bharna lazmi hain!', 'danger')
+            return redirect(url_for('signup'))
+
         hashed_password = generate_password_hash(password)
 
         try:
-            conn = sqlite3.connect('database.db')
+            conn = get_db_connection()
             cursor = conn.cursor()
             cursor.execute("INSERT INTO users (username, email, password) VALUES (?, ?, ?)", 
                            (username, email, hashed_password))
@@ -90,13 +98,12 @@ def dashboard():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Get user balance
     cursor.execute("SELECT balance FROM users WHERE id = ?", (session['user_id'],))
     user_data = cursor.fetchone()
-    balance = user_data[0] if user_data else 0.0
+    balance = user_data['balance'] if user_data else 0.0
     
     if request.method == 'POST':
         service = request.form.get('service')
@@ -108,7 +115,6 @@ def dashboard():
             conn.commit()
             flash('Order kamyaabi se place ho gaya!', 'success')
     
-    # Get recent orders
     cursor.execute("SELECT id, service, quantity, status FROM orders WHERE user_id = ?", (session['user_id'],))
     orders = cursor.fetchall()
     conn.close()
@@ -131,7 +137,7 @@ def services():
 def orders():
     if 'user_id' not in session:
         return redirect(url_for('login'))
-    conn = sqlite3.connect('database.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT id, service, link, quantity, price, status FROM orders WHERE user_id = ?", (session['user_id'],))
     orders = cursor.fetchall()
