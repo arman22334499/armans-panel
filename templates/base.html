@@ -20,10 +20,51 @@
     <!-- Navbar -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm py-3 mb-4">
         <div class="container">
-            <a class="navbar-brand fw-bold text-dark" href="{{ url_for('dashboard') if user else url_for('login') }}">
-                <i class="fas fa-fire text-warning me-2"></i> Arman SMM Panel
-            </a>
             
+            <!-- LEFT SIDE: Three Lines Hamburger Menu & Brand -->
+            <div class="d-flex align-items-center gap-3">
+                {% if user %}
+                <!-- Left Three-Lines Dropdown -->
+                <div class="dropdown">
+                    <button class="btn btn-light border rounded-3 px-3 py-2 shadow-sm" type="button" id="leftMenuDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-bars text-secondary fa-lg"></i>
+                    </button>
+                    <ul class="dropdown-menu shadow-lg border-0 rounded-4 p-2 mt-2" aria-labelledby="leftMenuDropdown" style="min-width: 220px;">
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('dashboard') }}">
+                                <i class="fas fa-home text-primary"></i> Dashboard
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('services') }}">
+                                <i class="fas fa-list text-info"></i> Services
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('orders') }}">
+                                <i class="fas fa-shopping-cart text-success"></i> Orders / Cancel
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('add_funds') }}">
+                                <i class="fas fa-wallet text-warning"></i> Add Funds
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('support_tickets') }}">
+                                <i class="fas fa-headset text-danger"></i> Complaints / Support
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                <a class="navbar-brand fw-bold text-dark m-0" href="{{ url_for('dashboard') if user else url_for('login') }}">
+                    <i class="fas fa-fire text-warning me-2"></i> Arman SMM Panel
+                </a>
+            </div>
+            
+            <!-- RIGHT SIDE: Balance & Profile Icon -->
             <div class="d-flex align-items-center gap-3 ms-auto">
                 {% if user %}
                 <!-- Balance Badge -->
@@ -33,28 +74,20 @@
                     <span class="ms-1 fw-bold text-dark">Rs. {{ "%.2f"|format(user.balance) }}</span>
                 </div>
 
-                <!-- Three-Lines Hamburger Menu Dropdown -->
+                <!-- Right Profile Icon Dropdown -->
                 <div class="dropdown">
-                    <button class="btn btn-light border rounded-3 px-3 py-2 shadow-sm" type="button" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="fas fa-bars text-secondary fa-lg"></i>
-                    </button>
-                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" aria-labelledby="profileDropdown" style="min-width: 230px;">
+                    <a href="#" class="d-flex align-items-center text-decoration-none dropdown-toggle hide-arrow" id="profileDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                        <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 40px; height: 40px; background: linear-gradient(135deg, #ff7700, #ff5500); font-size: 1.1rem; cursor: pointer;">
+                            {{ user.username[0]|upper if user and user.username else 'A' }}
+                        </div>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-4 p-2 mt-2" aria-labelledby="profileDropdown" style="min-width: 210px;">
                         <li class="px-3 py-2 border-bottom mb-2">
                             <span class="d-block text-muted" style="font-size: 0.75rem;">Signed in as</span>
                             <span class="fw-bold text-dark text-truncate d-block">{{ user.username }}</span>
                         </li>
                         <li>
-                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('add_funds') }}">
-                                <i class="fas fa-wallet text-warning"></i> Add Funds
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="#">
-                                <i class="fas fa-cog text-secondary"></i> Settings
-                            </a>
-                        </li>
-                        <li>
-                            <a class="dropdown-Item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('signup') }}">
+                            <a class="dropdown-item rounded-3 py-2 d-flex align-items-center gap-2 text-dark fw-medium" href="{{ url_for('signup') }}">
                                 <i class="fas fa-user-plus text-primary"></i> Add Another Account
                             </a>
                         </li>
@@ -68,6 +101,7 @@
                 </div>
                 {% endif %}
             </div>
+
         </div>
     </nav>
 
