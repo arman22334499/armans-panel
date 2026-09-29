@@ -38,14 +38,10 @@ def init_db():
     try:
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("DROP TABLE IF EXISTS users")
-        cursor.execute("DROP TABLE IF EXISTS orders")
-        cursor.execute("DROP TABLE IF EXISTS tickets")
-        cursor.execute("DROP TABLE IF EXISTS transactions")
-        cursor.execute("DROP TABLE IF EXISTS services")
         
+        # Tables create hon gi agar pehle se mojood na hon (Data delete nahi hoga)
         cursor.execute('''
-            CREATE TABLE users (
+            CREATE TABLE IF NOT EXISTS users (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 username TEXT UNIQUE NOT NULL,
                 email TEXT UNIQUE NOT NULL,
@@ -56,7 +52,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE orders (
+            CREATE TABLE IF NOT EXISTS orders (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 service TEXT,
@@ -68,7 +64,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE tickets (
+            CREATE TABLE IF NOT EXISTS tickets (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 subject TEXT,
@@ -77,7 +73,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE transactions (
+            CREATE TABLE IF NOT EXISTS transactions (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 user_id INTEGER,
                 gateway TEXT,
@@ -87,7 +83,7 @@ def init_db():
             )
         ''')
         cursor.execute('''
-            CREATE TABLE services (
+            CREATE TABLE IF NOT EXISTS services (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 api_service_id INTEGER,
                 name TEXT NOT NULL,
@@ -99,13 +95,19 @@ def init_db():
             )
         ''')
         
-        for s in INITIAL_SERVICES:
-            cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                           (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
+        # Services check kar ke insert karein agar table khali ho
+        cursor.execute("SELECT COUNT(*) FROM services")
+        if cursor.fetchone()[0] == 0:
+            for s in INITIAL_SERVICES:
+                cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                               (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
 
-        admin_pass = generate_password_hash('admin123')
-        cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
-                       ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
+        # Default Admin check karein agar mojood na ho
+        cursor.execute("SELECT * FROM users WHERE username = 'admin'")
+        if not cursor.fetchone():
+            admin_pass = generate_password_hash('admin123')
+            cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
+                           ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
         
         conn.commit()
         conn.close()
@@ -150,6 +152,7 @@ def login():
 
         conn = get_db_connection()
         cursor = conn.cursor()
+        # Email ya username dono se login support kare ga
         cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
         user = cursor.fetchone()
         conn.close()
@@ -183,7 +186,7 @@ def signup():
                                (username, email, hashed_password, 162.95, 52.05, 0))
                 conn.commit()
                 conn.close()
-                flash('Account ban gaya! Ab login karein.', 'success')
+                flash('Account kamyabi se ban gaya! Ab aap login kar sakte hain.', 'success')
                 return redirect(url_for('login'))
             except sqlite3.IntegrityError:
                 flash('Yeh Email ya Username pehle se mojood hai!', 'danger')
@@ -351,7 +354,7 @@ def admin_panel():
             try:
                 conn = get_db_connection()
                 cursor = conn.cursor()
-                cursor.execute("INSERT INTO services (api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                cursor.execute("SQLite3 INSERT OR IGNORE / INSERT INTO services (api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?)",
                                (int(api_service_id or 100), name, category, float(rate), 10, 10000, 'fas fa-star'))
                 conn.commit()
                 conn.close()
@@ -378,7 +381,7 @@ def admin_panel():
     return render_template('admin.html', user=user, all_users=all_users, all_orders=all_orders, all_transactions=all_transactions, services=services_list)
 
 @app.route('/logout')
-def logout():
+def logout() :
     session.clear()
     return redirect(url_for('login'))
 
