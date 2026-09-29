@@ -196,6 +196,13 @@ def add_funds():
     flash('Funds adding feature jald araha hai!', 'info')
     return redirect(url_for('dashboard'))
 
+@app.route('/support_tickets', methods=['GET', 'POST'])
+def support_tickets():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    flash('Support tickets feature jald araha hai!', 'info')
+    return redirect(url_for('dashboard'))
+
 @app.route('/orders')
 def orders():
     if 'user_id' not in session:
