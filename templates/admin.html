@@ -11,10 +11,67 @@
             </div>
             <div>
                 <h4 class="fw-bold mb-1" style="color: #1e293b;">Admin Control Center</h4>
-                <p class="text-muted small mb-0">Manage users, track automated orders and review transactions</p>
+                <p class="text-muted small mb-0">Manage services, users, orders and transactions directly from panel</p>
             </div>
         </div>
         <span class="badge bg-danger px-3 py-2 fw-bold text-uppercase" style="letter-spacing: 1px;">Admin Access</span>
+    </div>
+</div>
+
+<!-- Add New Service Form Section -->
+<div class="main-card mb-4" style="background: #ffffff;">
+    <div class="d-flex align-items-center gap-2 mb-3 pb-2 border-bottom">
+        <i class="fas fa-plus-circle text-warning fs-5"></i>
+        <h5 class="fw-bold m-0 text-dark">Add New Service to Panel</h5>
+    </div>
+    <form method="POST">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Service Name</label>
+                <input type="text" class="form-control" name="name" placeholder="e.g. TikTok Followers [Super Fast]" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Category</label>
+                <input type="text" class="form-control" name="category" placeholder="e.g. 🎵 TikTok Followers" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Rate per 1000 (PKR)</label>
+                <input type="number" step="0.01" class="form-control" name="rate" placeholder="e.g. 850" required>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-bold text-secondary small text-uppercase">Supplier API Service ID</label>
+                <input type="number" class="form-control" name="api_service_id" placeholder="e.g. 302" required>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-orange w-100 mt-3 py-2 text-uppercase fw-bold">
+            <i class="fas fa-plus me-2"></i> Add Service to Live Panel
+        </button>
+    </form>
+</div>
+
+<!-- Manage Existing Services Section -->
+<div class="main-card mb-4">
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <i class="fas fa-list text-warning"></i>
+        <h5 class="fw-bold m-0 text-dark">Live Services List ({{ services|length }})</h5>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light fs-7">
+                <tr><th>ID</th><th>Category</th><th>Service Name</th><th>Rate / 1000</th><th>API ID</th></tr>
+            </thead>
+            <tbody>
+                {% for s in services %}
+                <tr>
+                    <td><b>#{{ s.id }}</b></td>
+                    <td><span class="badge bg-light text-dark border">{{ s.category }}</span></td>
+                    <td><span class="small fw-semibold">{{ s.name }}</span></td>
+                    <td><b class="text-success">Rs. {{ "%.2f"|format(s.rate) }}</b></td>
+                    <td><code>{{ s.api_service_id }}</code></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 
