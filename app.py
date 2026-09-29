@@ -140,12 +140,13 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        login_input = request.form.get('email', '').strip()
+        login_input = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
 
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT * FROM users WHERE email = ? OR username = ?", (login_input, login_input))
+        # Case-insensitive search for both email and username
+        cursor.execute("SELECT * FROM users WHERE LOWER(email) = ? OR LOWER(username) = ?", (login_input, login_input))
         user = cursor.fetchone()
         conn.close()
 
@@ -566,14 +567,14 @@ def support_tickets():
     <div class="card p-4">
         <h4 class="mb-3 text-primary fw-bold"><i class="fas fa-headset me-2"></i> Support Tickets</h4>
         <div class="mb-3">
-            <label class="form-label fw-bold">Subject / Masla</label>
+            <label class="form-label fw-bold">Subject / Maslaशै</label>
             <input type="text" class="form-control" placeholder="Misal ke tor par: Order refill request">
         </div>
         <div class="mb-3">
             <label class="form-label fw-bold">Message Details</label>
             <textarea class="form-control mb-3" rows="4" placeholder="Apni detail yahan likhein..."></textarea>
         </div>
-        <button class="btn btn-success px-4 fw-bold">Submit Ticket</button>
+        <button class="btn btn-success fw-bold">Submit Ticket</button>
     </div>
     '''
     return render_template_string(MASTER_TEMPLATE, active_tab='support', title='Support Tickets', username=session.get('username'), balance=get_user_balance(session.get('user_id')), content=content)
