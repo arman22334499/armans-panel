@@ -62,11 +62,11 @@ def init_db():
             ]
             cursor.executemany("INSERT INTO services (name, category, rate) VALUES (?, ?, ?)", default_services)
 
-        cursor.execute("SELECT * FROM users WHERE username = 'admin'")
-        if not cursor.fetchone():
-            admin_pass = generate_password_hash('admin123')
-            cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
-                           ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
+        # Purana admin delete karke fresh admin set kar rahe hain
+        cursor.execute("DELETE FROM users WHERE username = 'admin' OR email = 'admin@armansmm.com'")
+        admin_pass = generate_password_hash('admin123')
+        cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
+                       ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
         
         conn.commit()
         conn.close()
@@ -84,7 +84,6 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        # Dono email ya username ko support karega
         login_input = request.form.get('email', '') or request.form.get('username', '')
         login_input = login_input.strip()
         password = request.form.get('password', '')
