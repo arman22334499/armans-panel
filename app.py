@@ -10,7 +10,6 @@ app.secret_key = 'arman_smm_panel_secure_key_2026'
 SMM_API_URL = "https://supplier-smm-panel-url.com/api/v2" 
 SMM_API_KEY = "YOUR_SUPPLIER_API_KEY_HERE"
 
-# Default Services List
 INITIAL_SERVICES = [
     {"id": 4317, "api_service_id": 101, "name": "Hostinger Premium Plan | Domain + Hosting 1 Year Plan", "category": "🌐 Hostinger Domain + Hosting", "rate": 4999, "min": 1, "max": 1, "icon": "fas fa-globe"},
     {"id": 1, "api_service_id": 201, "name": "Instagram Followers [Low Drop] | Premium", "category": "📸 Instagram Followers", "rate": 450, "min": 10, "max": 20000, "icon": "fab fa-instagram"},
@@ -100,12 +99,10 @@ def init_db():
             )
         ''')
         
-        # Insert Initial Services into DB
         for s in INITIAL_SERVICES:
             cursor.execute("INSERT INTO services (id, api_service_id, name, category, rate, min, max, icon) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                            (s['id'], s['api_service_id'], s['name'], s['category'], s['rate'], s['min'], s['max'], s['icon']))
 
-        # Create Default Admin User
         admin_pass = generate_password_hash('admin123')
         cursor.execute("INSERT INTO users (username, email, password, balance, total_spent, is_admin) VALUES (?, ?, ?, ?, ?, ?)",
                        ('admin', 'admin@armansmm.com', admin_pass, 5000.0, 0.0, 1))
@@ -338,7 +335,6 @@ def support_tickets():
     user = get_user_data(session['user_id'])
     return render_template('support.html', tickets=tickets, user=user)
 
-# --- ADMIN PANEL ROUTE ---
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_panel():
     if 'user_id' not in session or session.get('is_admin') != 1:
